@@ -1,4 +1,4 @@
-package dyno
+package dynamo
 
 import (
 	"github.com/antklim/go-dynamodb/invoice"
@@ -9,6 +9,7 @@ type repository struct {
 	client dynamodbiface.DynamoDBAPI
 }
 
+// NewRepository ...
 func NewRepository(client dynamodbiface.DynamoDBAPI) invoice.Repository {
 	return &repository{client: client}
 }
