@@ -2,10 +2,20 @@ package dynamo
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/antklim/go-dynamodb/invoice"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+)
+
+const (
+	keySeparator    = "#"
+	invoicePkPrefix = "INVOICE"
+	invoiceSkPrefix = "INVOICE"
+	itemPkPrefix    = "INVOICE" // invoice items are in the same partition as the invoice
+	itemSkPrefix    = "ITEM"
+	yyyymmddFormat  = "2006-01-02"
 )
 
 // Invoice describes dynamodb representation of invoice.Invoice
@@ -23,12 +33,39 @@ type Invoice struct {
 
 // NewInvoice creates an instance of DynamoDB invoice from invoice.Invoice.
 func NewInvoice(inv invoice.Invoice) *Invoice {
-	return nil
+	pk := invoicePk(inv)
+	sk := invoiceSk(inv)
+
+	return &Invoice{
+		PK:           pk,
+		SK:           sk,
+		ID:           inv.ID,
+		Number:       inv.Number,
+		CustomerName: inv.CustomerName,
+		Status:       string(inv.Status),
+		Date:         inv.Date.Format(yyyymmddFormat),
+		CreatedAt:    inv.CreatedAt,
+		UpdatedAt:    inv.UpdatedAt,
+	}
 }
 
 // ToInvoice creates an instance of invoice.Invoice from DynamoDB invoice.
 func (inv *Invoice) ToInvoice() (*invoice.Invoice, error) {
-	return nil, nil
+	date, err := time.Parse(yyyymmddFormat, inv.Date)
+	if err != nil {
+		return nil, err
+	}
+
+	return &invoice.Invoice{
+		ID:           inv.ID,
+		Number:       inv.Number,
+		CustomerName: inv.CustomerName,
+		Status:       invoice.Status(inv.Status),
+		Date:         date,
+		Items:        nil,
+		CreatedAt:    inv.CreatedAt,
+		UpdatedAt:    inv.UpdatedAt,
+	}, nil
 }
 
 // Item describes dynamodb representation of invoice.Item
@@ -46,13 +83,56 @@ type Item struct {
 }
 
 // NewItem creates an instance of DynamoDB item from invoice.Item.
-func NewItem(item invoice.Invoice) *Item {
-	return nil
+func NewItem(inv invoice.Invoice, item invoice.Item) *Item {
+	pk := itemPk(inv, item)
+	sk := itemSk(inv, item)
+
+	return &Item{
+		PK:        pk,
+		SK:        sk,
+		ID:        item.ID,
+		SKU:       item.SKU,
+		Name:      item.Name,
+		Price:     item.Price,
+		Qty:       item.Qty,
+		Status:    string(item.Status),
+		CreatedAt: item.CreatedAt,
+		UpdatedAt: item.UpdatedAt,
+	}
 }
 
 // ToItem creates an instance of invoice.Item from DynamoDB item.
-func (item *Item) ToItem() (*invoice.Item, error) {
-	return nil, nil
+func (item *Item) ToItem() *invoice.Item {
+	return &invoice.Item{
+		ID:        item.ID,
+		SKU:       item.SKU,
+		Name:      item.Name,
+		Price:     item.Price,
+		Qty:       item.Qty,
+		Status:    invoice.Status(item.Status),
+		CreatedAt: item.CreatedAt,
+		UpdatedAt: item.UpdatedAt,
+	}
+}
+
+func invoicePk(inv invoice.Invoice) string {
+	elems := []string{invoicePkPrefix, inv.ID}
+	return strings.Join(elems, keySeparator)
+}
+
+func invoiceSk(inv invoice.Invoice) string {
+	elems := []string{invoiceSkPrefix, inv.ID}
+	return strings.Join(elems, keySeparator)
+}
+
+func itemPk(inv invoice.Invoice, item invoice.Item) string {
+	elems := []string{itemPkPrefix, inv.ID}
+	return strings.Join(elems, keySeparator)
+}
+
+func itemSk(inv invoice.Invoice, item invoice.Item) string {
+	elems := []string{itemSkPrefix, item.ID}
+	return strings.Join(elems, keySeparator)
 }
 
 type repository struct {
