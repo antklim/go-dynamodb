@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/antklim/go-dynamodb/invoice"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
@@ -18,7 +19,7 @@ const (
 	invoiceSkPrefix = "INVOICE"
 	itemPkPrefix    = "INVOICE" // invoice items are in the same partition as the invoice
 	itemSkPrefix    = "ITEM"
-	yyyymmddFormat  = "2006-01-02"
+	yyyymmddFormat  = "20060102"
 )
 
 // Invoice describes dynamodb representation of invoice.Invoice
@@ -140,23 +141,25 @@ func itemSk(inv invoice.Invoice, item invoice.Item) string {
 
 type repository struct {
 	client dynamodbiface.DynamoDBAPI
+	table  string
 }
 
 // NewRepository ...
-func NewRepository(client dynamodbiface.DynamoDBAPI) invoice.Repository {
-	return &repository{client: client}
+func NewRepository(client dynamodbiface.DynamoDBAPI, table string) invoice.Repository {
+	return &repository{client: client, table: table}
 }
 
 func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error {
 	dbinv := NewInvoice(inv)
-	putItems := make([]*dynamodb.TransactWriteItem, len(inv.Items)+1)
-
 	putInvoiceItem, err := dynamodbattribute.MarshalMap(dbinv)
 	if err != nil {
 		return err
 	}
 
-	putItems = append(putItems, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{Item: putInvoiceItem}})
+	putItems := append([]*dynamodb.TransactWriteItem{}, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{
+		TableName: aws.String(r.table),
+		Item:      putInvoiceItem,
+	}})
 
 	for _, item := range inv.Items {
 		dbitem := NewItem(inv, item)
@@ -164,11 +167,23 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 		if err != nil {
 			return err
 		}
-		putItems = append(putItems, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{Item: putInvoiceItemItem}})
+
+		putItems = append(
+			putItems,
+			&dynamodb.TransactWriteItem{
+				Put: &dynamodb.Put{
+					TableName: aws.String(r.table),
+					Item:      putInvoiceItemItem,
+				},
+			})
 	}
 
 	transaction := &dynamodb.TransactWriteItemsInput{
 		TransactItems: putItems,
+	}
+
+	if err := transaction.Validate(); err != nil {
+		return err
 	}
 
 	_, err = r.client.TransactWriteItemsWithContext(ctx, transaction)

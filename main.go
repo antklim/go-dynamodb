@@ -16,7 +16,7 @@ import (
 func main() {
 	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String("ap-southeast-2")}))
 	client := dynamodb.New(sess)
-	repo := dynamo.NewRepository(client)
+	repo := dynamo.NewRepository(client, "invoices")
 	service := invoice.NewService(repo)
 
 	{
@@ -34,7 +34,8 @@ func main() {
 		}
 		ctx := context.Background()
 		err := service.StoreInvoice(ctx, inv)
-		log.Println(inv, err)
+		log.Println(inv)
+		log.Println(err)
 	}
 
 	// {
