@@ -23,14 +23,35 @@ func main() {
 		// 1. Create invoice
 		now := time.Now()
 		inv := invoice.Invoice{
-			ID:           uuid.New().String(),
+			ID:           uuid.NewString(),
 			Number:       "123",
 			CustomerName: "John Doe",
 			Status:       "NEW",
 			Date:         now,
-			Items:        nil,
-			CreatedAt:    now,
-			UpdatedAt:    now,
+			Items: []invoice.Item{
+				{
+					ID:        uuid.NewString(),
+					SKU:       "100",
+					Name:      "Guitar",
+					Price:     75000,
+					Qty:       1,
+					Status:    "NEW",
+					CreatedAt: now,
+					UpdatedAt: now,
+				},
+				{
+					ID:        uuid.NewString(),
+					SKU:       "101",
+					Name:      "Guitar strings",
+					Price:     8300,
+					Qty:       3,
+					Status:    "NEW",
+					CreatedAt: now,
+					UpdatedAt: now,
+				},
+			},
+			CreatedAt: now,
+			UpdatedAt: now,
 		}
 		ctx := context.Background()
 		err := service.StoreInvoice(ctx, inv)

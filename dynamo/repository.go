@@ -81,7 +81,7 @@ type Item struct {
 	Name      string    `dynamodbav:"name"`
 	Price     uint      `dynamodbav:"price"`
 	Qty       uint      `dynamodbav:"qty"`
-	Status    string    `dynamodbav:"createdAt"`
+	Status    string    `dynamodbav:"status"`
 	CreatedAt time.Time `dynamodbav:"createdAt"`
 	UpdatedAt time.Time `dynamodbav:"updatedAt"`
 }
@@ -156,7 +156,8 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 		return err
 	}
 
-	putItems := append([]*dynamodb.TransactWriteItem{}, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{
+	putItems := []*dynamodb.TransactWriteItem{}
+	putItems = append(putItems, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{
 		TableName: aws.String(r.table),
 		Item:      putInvoiceItem,
 	}})
@@ -168,20 +169,13 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 			return err
 		}
 
-		putItems = append(
-			putItems,
-			&dynamodb.TransactWriteItem{
-				Put: &dynamodb.Put{
-					TableName: aws.String(r.table),
-					Item:      putInvoiceItemItem,
-				},
-			})
+		putItems = append(putItems, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{
+			TableName: aws.String(r.table),
+			Item:      putInvoiceItemItem,
+		}})
 	}
 
-	transaction := &dynamodb.TransactWriteItemsInput{
-		TransactItems: putItems,
-	}
-
+	transaction := &dynamodb.TransactWriteItemsInput{TransactItems: putItems}
 	if err := transaction.Validate(); err != nil {
 		return err
 	}
