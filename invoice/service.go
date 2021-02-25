@@ -38,8 +38,8 @@ type Service interface {
 	CancelInvoice(string) error          // cancels invoice and all its items
 	AddItem(string, Item) error          // adds item to invoice
 	GetItem(string) (*Item, error)
-	GetItemsByStatus(Status) ([]*Item, error)
-	GetInvoiceItemsByStatus(string, Status) ([]*Item, error)
+	GetItemsByStatus(Status) ([]Item, error)
+	GetInvoiceItemsByStatus(string, Status) ([]Item, error)
 	UpdateInvoiceItemsStatus(string, Status) error
 	ReplaceItems(string, []Item) error // cancells all invoice items and adds new items
 }
@@ -73,11 +73,11 @@ func (s *service) GetItem(string) (*Item, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (s *service) GetItemsByStatus(Status) ([]*Item, error) {
+func (s *service) GetItemsByStatus(Status) ([]Item, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (s *service) GetInvoiceItemsByStatus(string, Status) ([]*Item, error) {
+func (s *service) GetInvoiceItemsByStatus(string, Status) ([]Item, error) {
 	return nil, errors.New("not implemented")
 }
 

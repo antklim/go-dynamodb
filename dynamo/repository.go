@@ -1,11 +1,14 @@
 package dynamo
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"time"
 
 	"github.com/antklim/go-dynamodb/invoice"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 )
 
@@ -32,11 +35,11 @@ type Invoice struct {
 }
 
 // NewInvoice creates an instance of DynamoDB invoice from invoice.Invoice.
-func NewInvoice(inv invoice.Invoice) *Invoice {
+func NewInvoice(inv invoice.Invoice) Invoice {
 	pk := invoicePk(inv)
 	sk := invoiceSk(inv)
 
-	return &Invoice{
+	return Invoice{
 		PK:           pk,
 		SK:           sk,
 		ID:           inv.ID,
@@ -83,11 +86,11 @@ type Item struct {
 }
 
 // NewItem creates an instance of DynamoDB item from invoice.Item.
-func NewItem(inv invoice.Invoice, item invoice.Item) *Item {
+func NewItem(inv invoice.Invoice, item invoice.Item) Item {
 	pk := itemPk(inv, item)
 	sk := itemSk(inv, item)
 
-	return &Item{
+	return Item{
 		PK:        pk,
 		SK:        sk,
 		ID:        item.ID,
@@ -102,8 +105,8 @@ func NewItem(inv invoice.Invoice, item invoice.Item) *Item {
 }
 
 // ToItem creates an instance of invoice.Item from DynamoDB item.
-func (item *Item) ToItem() *invoice.Item {
-	return &invoice.Item{
+func (item *Item) ToItem() invoice.Item {
+	return invoice.Item{
 		ID:        item.ID,
 		SKU:       item.SKU,
 		Name:      item.Name,
@@ -144,38 +147,63 @@ func NewRepository(client dynamodbiface.DynamoDBAPI) invoice.Repository {
 	return &repository{client: client}
 }
 
-func (r *repository) AddInvoice(invoice.Invoice) error {
-	return errors.New("not implemented")
+func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error {
+	dbinv := NewInvoice(inv)
+	putItems := make([]*dynamodb.TransactWriteItem, len(inv.Items)+1)
+
+	putInvoiceItem, err := dynamodbattribute.MarshalMap(dbinv)
+	if err != nil {
+		return err
+	}
+
+	putItems = append(putItems, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{Item: putInvoiceItem}})
+
+	for _, item := range inv.Items {
+		dbitem := NewItem(inv, item)
+		putInvoiceItemItem, err := dynamodbattribute.MarshalMap(dbitem)
+		if err != nil {
+			return err
+		}
+		putItems = append(putItems, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{Item: putInvoiceItemItem}})
+	}
+
+	transaction := &dynamodb.TransactWriteItemsInput{
+		TransactItems: putItems,
+	}
+
+	_, err = r.client.TransactWriteItemsWithContext(ctx, transaction)
+
+	return err
 }
 
-func (r *repository) GetInvoice(string) (*invoice.Invoice, error) {
+func (r *repository) GetInvoice(ctx context.Context, invoiceID string) (*invoice.Invoice, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (r *repository) CancelInvoice(string) error {
+func (r *repository) CancelInvoice(ctx context.Context, invoiceID string) error {
 	return errors.New("not implemented")
 }
 
-func (r *repository) AddItem(string, invoice.Item) error {
+func (r *repository) AddItem(ctx context.Context, invoiceID string, item invoice.Item) error {
 	return errors.New("not implemented")
 }
 
-func (r *repository) GetItem(string) (*invoice.Item, error) {
+func (r *repository) GetItem(ctx context.Context, itemID string) (*invoice.Item, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (r *repository) GetItemsByStatus(invoice.Status) ([]*invoice.Item, error) {
+func (r *repository) GetItemsByStatus(ctx context.Context, status invoice.Status) ([]invoice.Item, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (r *repository) GetInvoiceItemsByStatus(string, invoice.Status) ([]*invoice.Item, error) {
+func (r *repository) GetInvoiceItemsByStatus(ctx context.Context, invoiceID string, status invoice.Status) ([]invoice.Item, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (r *repository) UpdateInvoiceItemsStatus(string, invoice.Status) error {
+func (r *repository) UpdateInvoiceItemsStatus(ctx context.Context, invoiceID string, status invoice.Status) error {
 	return errors.New("not implemented")
 }
 
-func (r *repository) ReplaceItems(string, []invoice.Item) error {
+func (r *repository) ReplaceItems(ctx context.Context, invoiceID string, items []invoice.Item) error {
 	return errors.New("not implemented")
 }
