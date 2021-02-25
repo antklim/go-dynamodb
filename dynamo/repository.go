@@ -38,8 +38,8 @@ type Invoice struct {
 
 // NewInvoice creates an instance of DynamoDB invoice from invoice.Invoice.
 func NewInvoice(inv invoice.Invoice) Invoice {
-	pk := invoicePk(inv)
-	sk := invoiceSk(inv)
+	pk := invoicePk(inv.ID)
+	sk := invoiceSk(inv.ID)
 
 	return Invoice{
 		PK:           pk,
@@ -89,8 +89,8 @@ type Item struct {
 
 // NewItem creates an instance of DynamoDB item from invoice.Item.
 func NewItem(inv invoice.Invoice, item invoice.Item) Item {
-	pk := itemPk(inv, item)
-	sk := itemSk(inv, item)
+	pk := itemPk(inv.ID)
+	sk := itemSk(item.ID)
 
 	return Item{
 		PK:        pk,
@@ -120,23 +120,23 @@ func (item *Item) ToItem() invoice.Item {
 	}
 }
 
-func invoicePk(inv invoice.Invoice) string {
-	elems := []string{invoicePkPrefix, inv.ID}
+func invoicePk(invoiceID string) string {
+	elems := []string{invoicePkPrefix, invoiceID}
 	return strings.Join(elems, keySeparator)
 }
 
-func invoiceSk(inv invoice.Invoice) string {
-	elems := []string{invoiceSkPrefix, inv.ID}
+func invoiceSk(invoiceID string) string {
+	elems := []string{invoiceSkPrefix, invoiceID}
 	return strings.Join(elems, keySeparator)
 }
 
-func itemPk(inv invoice.Invoice, item invoice.Item) string {
-	elems := []string{itemPkPrefix, inv.ID}
+func itemPk(invoiceID string) string {
+	elems := []string{itemPkPrefix, invoiceID}
 	return strings.Join(elems, keySeparator)
 }
 
-func itemSk(inv invoice.Invoice, item invoice.Item) string {
-	elems := []string{itemSkPrefix, item.ID}
+func itemSk(itemID string) string {
+	elems := []string{itemSkPrefix, itemID}
 	return strings.Join(elems, keySeparator)
 }
 
@@ -224,12 +224,59 @@ func (r *repository) GetItemsByStatus(ctx context.Context, status invoice.Status
 		return nil, err
 	}
 
-	if aws.Int64Value(result.Count) == 0 {
+	return toInvoiceItems(result.Items)
+}
+
+func (r *repository) GetInvoiceItemsByStatus(
+	ctx context.Context, invoiceID string, status invoice.Status) ([]invoice.Item, error) {
+
+	pk := itemPk(invoiceID)
+	keyCond := expression.KeyAnd(
+		expression.Key("pk").Equal(expression.Value(pk)),
+		expression.Key("sk").BeginsWith(itemSkPrefix+keySeparator),
+	)
+
+	filt := expression.Name("status").Equal(expression.Value(status))
+
+	expr, err := expression.NewBuilder().
+		WithKeyCondition(keyCond).
+		WithFilter(filt).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+
+	input := &dynamodb.QueryInput{
+		TableName:                 r.table,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		KeyConditionExpression:    expr.KeyCondition(),
+		FilterExpression:          expr.Filter(),
+	}
+
+	result, err := r.client.QueryWithContext(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return toInvoiceItems(result.Items)
+}
+
+func (r *repository) UpdateInvoiceItemsStatus(ctx context.Context, invoiceID string, status invoice.Status) error {
+	return errors.New("not implemented")
+}
+
+func (r *repository) ReplaceItems(ctx context.Context, invoiceID string, items []invoice.Item) error {
+	return errors.New("not implemented")
+}
+
+func toInvoiceItems(rawItems []map[string]*dynamodb.AttributeValue) ([]invoice.Item, error) {
+	if len(rawItems) == 0 {
 		return nil, nil
 	}
 
 	dbItems := []*Item{}
-	if err := dynamodbattribute.UnmarshalListOfMaps(result.Items, &dbItems); err != nil {
+	if err := dynamodbattribute.UnmarshalListOfMaps(rawItems, &dbItems); err != nil {
 		return nil, err
 	}
 
@@ -239,16 +286,4 @@ func (r *repository) GetItemsByStatus(ctx context.Context, status invoice.Status
 	}
 
 	return invoiceItems, nil
-}
-
-func (r *repository) GetInvoiceItemsByStatus(ctx context.Context, invoiceID string, status invoice.Status) ([]invoice.Item, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (r *repository) UpdateInvoiceItemsStatus(ctx context.Context, invoiceID string, status invoice.Status) error {
-	return errors.New("not implemented")
-}
-
-func (r *repository) ReplaceItems(ctx context.Context, invoiceID string, items []invoice.Item) error {
-	return errors.New("not implemented")
 }

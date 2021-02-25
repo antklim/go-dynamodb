@@ -19,10 +19,11 @@ func main() {
 	repo := dynamo.NewRepository(client, "invoices")
 	service := invoice.NewService(repo)
 
+	var inv invoice.Invoice
 	{
 		// 1. Create invoice
 		now := time.Now()
-		inv := invoice.Invoice{
+		inv = invoice.Invoice{
 			ID:           uuid.NewString(),
 			Number:       "123",
 			CustomerName: "John Doe",
@@ -73,6 +74,14 @@ func main() {
 		// 2. Get all new items
 		ctx := context.Background()
 		items, err := service.GetItemsByStatus(ctx, "NEW")
+		log.Printf("%+v\n", items)
+		log.Println(err)
+	}
+
+	{
+		// 3. Get new items of the invoice
+		ctx := context.Background()
+		items, err := service.GetInvoiceItemsByStatus(ctx, inv.ID, "NEW")
 		log.Printf("%+v\n", items)
 		log.Println(err)
 	}

@@ -78,8 +78,8 @@ func (s *service) GetItemsByStatus(ctx context.Context, status Status) ([]Item, 
 	return s.repo.GetItemsByStatus(ctx, status)
 }
 
-func (s *service) GetInvoiceItemsByStatus(context.Context, string, Status) ([]Item, error) {
-	return nil, errors.New("not implemented")
+func (s *service) GetInvoiceItemsByStatus(ctx context.Context, invoiceID string, status Status) ([]Item, error) {
+	return s.repo.GetInvoiceItemsByStatus(ctx, invoiceID, status)
 }
 
 func (s *service) UpdateInvoiceItemsStatus(context.Context, string, Status) error {
