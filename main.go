@@ -45,6 +45,16 @@ func main() {
 					Name:      "Guitar strings",
 					Price:     8300,
 					Qty:       3,
+					Status:    "PENDING",
+					CreatedAt: now,
+					UpdatedAt: now,
+				},
+				{
+					ID:        uuid.NewString(),
+					SKU:       "102",
+					Name:      "Pick",
+					Price:     1000,
+					Qty:       2,
 					Status:    "NEW",
 					CreatedAt: now,
 					UpdatedAt: now,
@@ -59,9 +69,11 @@ func main() {
 		log.Println(err)
 	}
 
-	// {
-	// 	ctx := context.Background()
-	// 	inv, err := service.GetInvoice(ctx, "123")
-	// 	log.Println(inv, err)
-	// }
+	{
+		// 2. Get all new items
+		ctx := context.Background()
+		items, err := service.GetItemsByStatus(ctx, "NEW")
+		log.Printf("%+v\n", items)
+		log.Println(err)
+	}
 }

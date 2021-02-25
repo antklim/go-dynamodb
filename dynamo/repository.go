@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 )
 
 const (
@@ -141,12 +142,12 @@ func itemSk(inv invoice.Invoice, item invoice.Item) string {
 
 type repository struct {
 	client dynamodbiface.DynamoDBAPI
-	table  string
+	table  *string
 }
 
 // NewRepository ...
 func NewRepository(client dynamodbiface.DynamoDBAPI, table string) invoice.Repository {
-	return &repository{client: client, table: table}
+	return &repository{client: client, table: aws.String(table)}
 }
 
 func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error {
@@ -158,7 +159,7 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 
 	putItems := []*dynamodb.TransactWriteItem{}
 	putItems = append(putItems, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{
-		TableName: aws.String(r.table),
+		TableName: r.table,
 		Item:      putInvoiceItem,
 	}})
 
@@ -170,7 +171,7 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 		}
 
 		putItems = append(putItems, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{
-			TableName: aws.String(r.table),
+			TableName: r.table,
 			Item:      putInvoiceItemItem,
 		}})
 	}
@@ -202,7 +203,42 @@ func (r *repository) GetItem(ctx context.Context, itemID string) (*invoice.Item,
 }
 
 func (r *repository) GetItemsByStatus(ctx context.Context, status invoice.Status) ([]invoice.Item, error) {
-	return nil, errors.New("not implemented")
+	filt := expression.And(
+		expression.Name("sk").BeginsWith(itemSkPrefix+keySeparator),
+		expression.Name("status").Equal(expression.Value(status)),
+	)
+	expr, err := expression.NewBuilder().WithFilter(filt).Build()
+	if err != nil {
+		return nil, err
+	}
+
+	input := &dynamodb.ScanInput{
+		TableName:                 r.table,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+	}
+
+	result, err := r.client.ScanWithContext(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	if aws.Int64Value(result.Count) == 0 {
+		return nil, nil
+	}
+
+	dbItems := []*Item{}
+	if err := dynamodbattribute.UnmarshalListOfMaps(result.Items, &dbItems); err != nil {
+		return nil, err
+	}
+
+	invoiceItems := make([]invoice.Item, len(dbItems))
+	for idx, dbItem := range dbItems {
+		invoiceItems[idx] = dbItem.ToItem()
+	}
+
+	return invoiceItems, nil
 }
 
 func (r *repository) GetInvoiceItemsByStatus(ctx context.Context, invoiceID string, status invoice.Status) ([]invoice.Item, error) {

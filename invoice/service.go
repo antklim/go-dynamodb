@@ -74,8 +74,8 @@ func (s *service) GetItem(context.Context, string) (*Item, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (s *service) GetItemsByStatus(context.Context, Status) ([]Item, error) {
-	return nil, errors.New("not implemented")
+func (s *service) GetItemsByStatus(ctx context.Context, status Status) ([]Item, error) {
+	return s.repo.GetItemsByStatus(ctx, status)
 }
 
 func (s *service) GetInvoiceItemsByStatus(context.Context, string, Status) ([]Item, error) {
