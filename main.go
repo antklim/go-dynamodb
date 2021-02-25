@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/antklim/go-dynamodb/dynamo"
@@ -16,6 +17,7 @@ func main() {
 	repo := dynamo.NewRepository(client)
 	service := invoice.NewService(repo)
 
-	inv, err := service.GetInvoice("123")
+	ctx := context.Background()
+	inv, err := service.GetInvoice(ctx, "123")
 	log.Println(inv, err)
 }

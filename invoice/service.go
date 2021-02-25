@@ -1,6 +1,7 @@
 package invoice
 
 import (
+	"context"
 	"errors"
 	"time"
 )
@@ -33,15 +34,15 @@ type Item struct {
 }
 
 type Service interface {
-	StoreInvoice(Invoice) error
-	GetInvoice(string) (*Invoice, error) // gets invoice and all its items
-	CancelInvoice(string) error          // cancels invoice and all its items
-	AddItem(string, Item) error          // adds item to invoice
-	GetItem(string) (*Item, error)
-	GetItemsByStatus(Status) ([]Item, error)
-	GetInvoiceItemsByStatus(string, Status) ([]Item, error)
-	UpdateInvoiceItemsStatus(string, Status) error
-	ReplaceItems(string, []Item) error // cancells all invoice items and adds new items
+	StoreInvoice(context.Context, Invoice) error
+	GetInvoice(context.Context, string) (*Invoice, error) // gets invoice and all its items
+	CancelInvoice(context.Context, string) error          // cancels invoice and all its items
+	AddItem(context.Context, string, Item) error          // adds item to invoice
+	GetItem(context.Context, string) (*Item, error)
+	GetItemsByStatus(context.Context, Status) ([]Item, error)
+	GetInvoiceItemsByStatus(context.Context, string, Status) ([]Item, error)
+	UpdateInvoiceItemsStatus(context.Context, string, Status) error
+	ReplaceItems(context.Context, string, []Item) error // cancells all invoice items and adds new items
 }
 
 type service struct {
@@ -53,38 +54,38 @@ func NewService(repo Repository) Service {
 	return &service{repo: repo}
 }
 
-func (s *service) StoreInvoice(Invoice) error {
-	return errors.New("not implemented")
+func (s *service) StoreInvoice(ctx context.Context, inv Invoice) error {
+	return s.repo.AddInvoice(ctx, inv)
 }
 
-func (s *service) GetInvoice(string) (*Invoice, error) {
+func (s *service) GetInvoice(context.Context, string) (*Invoice, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (s *service) CancelInvoice(string) error {
+func (s *service) CancelInvoice(context.Context, string) error {
 	return errors.New("not implemented")
 }
 
-func (s *service) AddItem(string, Item) error {
+func (s *service) AddItem(context.Context, string, Item) error {
 	return errors.New("not implemented")
 }
 
-func (s *service) GetItem(string) (*Item, error) {
+func (s *service) GetItem(context.Context, string) (*Item, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (s *service) GetItemsByStatus(Status) ([]Item, error) {
+func (s *service) GetItemsByStatus(context.Context, Status) ([]Item, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (s *service) GetInvoiceItemsByStatus(string, Status) ([]Item, error) {
+func (s *service) GetInvoiceItemsByStatus(context.Context, string, Status) ([]Item, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (s *service) UpdateInvoiceItemsStatus(string, Status) error {
+func (s *service) UpdateInvoiceItemsStatus(context.Context, string, Status) error {
 	return errors.New("not implemented")
 }
 
-func (s *service) ReplaceItems(string, []Item) error {
+func (s *service) ReplaceItems(context.Context, string, []Item) error {
 	return errors.New("not implemented")
 }
