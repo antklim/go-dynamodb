@@ -1,6 +1,9 @@
 package invoice
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 // Status ...
 type Status string
@@ -45,6 +48,43 @@ type service struct {
 	repo Repository
 }
 
+// NewService creates a new instance of invoice service
 func NewService(repo Repository) Service {
 	return &service{repo: repo}
+}
+
+func (s *service) StoreInvoice(Invoice) error {
+	return errors.New("not implemented")
+}
+
+func (s *service) GetInvoice(string) (*Invoice, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *service) CancelInvoice(string) error {
+	return errors.New("not implemented")
+}
+
+func (s *service) AddItem(string, Item) error {
+	return errors.New("not implemented")
+}
+
+func (s *service) GetItem(string) (*Item, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *service) GetItemsByStatus(Status) ([]*Item, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *service) GetInvoiceItemsByStatus(string, Status) ([]*Item, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *service) UpdateInvoiceItemsStatus(string, Status) error {
+	return errors.New("not implemented")
+}
+
+func (s *service) ReplaceItems(string, []Item) error {
+	return errors.New("not implemented")
 }
