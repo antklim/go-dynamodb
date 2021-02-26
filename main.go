@@ -20,11 +20,12 @@ func main() {
 	service := invoice.NewService(repo)
 
 	var inv invoice.Invoice
+	invoiceID := uuid.NewString()
 	{
 		// 1. Create invoice
 		now := time.Now()
 		inv = invoice.Invoice{
-			ID:           uuid.NewString(),
+			ID:           invoiceID,
 			Number:       "123",
 			CustomerName: "John Doe",
 			Status:       "NEW",
@@ -32,6 +33,7 @@ func main() {
 			Items: []invoice.Item{
 				{
 					ID:        uuid.NewString(),
+					InvoiceID: invoiceID,
 					SKU:       "100",
 					Name:      "Guitar",
 					Price:     75000,
@@ -42,6 +44,7 @@ func main() {
 				},
 				{
 					ID:        uuid.NewString(),
+					InvoiceID: invoiceID,
 					SKU:       "101",
 					Name:      "Guitar strings",
 					Price:     8300,
@@ -52,6 +55,7 @@ func main() {
 				},
 				{
 					ID:        uuid.NewString(),
+					InvoiceID: invoiceID,
 					SKU:       "102",
 					Name:      "Pick",
 					Price:     1000,
@@ -81,7 +85,7 @@ func main() {
 	{
 		// 3. Get NEW items of the invoice
 		ctx := context.Background()
-		items, err := service.GetInvoiceItemsByStatus(ctx, inv.ID, "NEW")
+		items, err := service.GetInvoiceItemsByStatus(ctx, invoiceID, "NEW")
 		log.Printf("%+v\n", items)
 		log.Println(err)
 	}
@@ -89,7 +93,7 @@ func main() {
 	{
 		// 4. Update all invoce's items status
 		ctx := context.Background()
-		err := service.UpdateInvoiceItemsStatus(ctx, inv.ID, "CANCELLED")
+		err := service.UpdateInvoiceItemsStatus(ctx, invoiceID, "CANCELLED")
 		log.Println(err)
 	}
 
@@ -100,6 +104,7 @@ func main() {
 		newItems := []invoice.Item{
 			{
 				ID:        uuid.NewString(),
+				InvoiceID: invoiceID,
 				SKU:       "300",
 				Name:      "Drums set",
 				Price:     132000,
@@ -110,6 +115,7 @@ func main() {
 			},
 			{
 				ID:        uuid.NewString(),
+				InvoiceID: invoiceID,
 				SKU:       "301",
 				Name:      "Drum sticks",
 				Price:     4200,
@@ -119,7 +125,7 @@ func main() {
 				UpdatedAt: now,
 			},
 		}
-		err := service.ReplaceItems(ctx, inv.ID, newItems)
+		err := service.ReplaceItems(ctx, invoiceID, newItems)
 		log.Println(err)
 	}
 }

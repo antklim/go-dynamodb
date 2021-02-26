@@ -24,6 +24,7 @@ type Invoice struct {
 // Item ...
 type Item struct {
 	ID        string // unique identifier, uuid format
+	InvoiceID string
 	SKU       string
 	Name      string
 	Price     uint

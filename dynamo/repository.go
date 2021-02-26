@@ -73,13 +73,12 @@ func (inv *Invoice) ToInvoice() (*invoice.Invoice, error) {
 	}, nil
 }
 
-// TODO: Add invoiceID to Item
-
 // Item describes dynamodb representation of invoice.Item
 type Item struct {
 	PK        string    `dynamodbav:"pk"`
 	SK        string    `dynamodbav:"sk"`
 	ID        string    `dynamodbav:"id"`
+	InvoiceID string    `dynamodbav:"invoiceId"`
 	SKU       string    `dynamodbav:"sku"`
 	Name      string    `dynamodbav:"name"`
 	Price     uint      `dynamodbav:"price"`
@@ -90,14 +89,15 @@ type Item struct {
 }
 
 // NewItem creates an instance of DynamoDB item from invoice.Item.
-func NewItem(invoiceID string, item invoice.Item) Item {
-	pk := itemPk(invoiceID)
+func NewItem(item invoice.Item) Item {
+	pk := itemPk(item.InvoiceID)
 	sk := itemSk(item.ID)
 
 	return Item{
 		PK:        pk,
 		SK:        sk,
 		ID:        item.ID,
+		InvoiceID: item.InvoiceID,
 		SKU:       item.SKU,
 		Name:      item.Name,
 		Price:     item.Price,
@@ -112,6 +112,7 @@ func NewItem(invoiceID string, item invoice.Item) Item {
 func (item *Item) ToItem() invoice.Item {
 	return invoice.Item{
 		ID:        item.ID,
+		InvoiceID: item.InvoiceID,
 		SKU:       item.SKU,
 		Name:      item.Name,
 		Price:     item.Price,
@@ -166,7 +167,7 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 	}})
 
 	for _, item := range inv.Items {
-		dbitem := NewItem(inv.ID, item)
+		dbitem := NewItem(item)
 		putInvoiceItemItem, err := dynamodbattribute.MarshalMap(dbitem)
 		if err != nil {
 			return err
@@ -285,7 +286,7 @@ func (r *repository) UpdateInvoiceItemsStatus(
 		return err
 	}
 
-	updates := invoiceItemsToUpdates(items, invoiceID, r.table, expr)
+	updates := invoiceItemsToUpdates(items, r.table, expr)
 	updateItems := make([]*dynamodb.TransactWriteItem, len(updates))
 	for idx, update := range updates {
 		updateItems[idx] = &dynamodb.TransactWriteItem{Update: update}
@@ -318,8 +319,8 @@ func (r *repository) ReplaceItems(
 		return err
 	}
 
-	updates := invoiceItemsToUpdates(items, invoiceID, r.table, expr)
-	puts, err := invoiceItemsToPuts(newItems, invoiceID, r.table)
+	updates := invoiceItemsToUpdates(items, r.table, expr)
+	puts, err := invoiceItemsToPuts(newItems, r.table)
 	if err != nil {
 		return err
 	}
@@ -360,19 +361,13 @@ func toInvoiceItems(rawItems []map[string]*dynamodb.AttributeValue) ([]invoice.I
 	return invoiceItems, nil
 }
 
-func invoiceItemsToUpdates(
-	items []invoice.Item,
-	invoiceID string,
-	table *string,
-	expr expression.Expression,
-) []*dynamodb.Update {
-
-	pk := aws.String(itemPk(invoiceID))
-
+func invoiceItemsToUpdates(items []invoice.Item, table *string, expr expression.Expression) []*dynamodb.Update {
 	updates := make([]*dynamodb.Update, len(items))
 
 	for idx, item := range items {
+		pk := aws.String(itemPk(item.InvoiceID))
 		sk := aws.String(itemSk(item.ID))
+
 		updates[idx] = &dynamodb.Update{
 			TableName: table,
 			Key: map[string]*dynamodb.AttributeValue{
@@ -393,11 +388,11 @@ func invoiceItemsToUpdates(
 	return updates
 }
 
-func invoiceItemsToPuts(items []invoice.Item, invoiceID string, table *string) ([]*dynamodb.Put, error) {
+func invoiceItemsToPuts(items []invoice.Item, table *string) ([]*dynamodb.Put, error) {
 	putItems := make([]*dynamodb.Put, len(items))
 
 	for idx, item := range items {
-		dbitem := NewItem(invoiceID, item)
+		dbitem := NewItem(item)
 		putItem, err := dynamodbattribute.MarshalMap(dbitem)
 		if err != nil {
 			return nil, err
