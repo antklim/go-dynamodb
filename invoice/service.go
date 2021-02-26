@@ -55,22 +55,27 @@ func NewService(repo Repository) Service {
 }
 
 func (s *service) StoreInvoice(ctx context.Context, inv Invoice) error {
+	// TODO: implement
 	return s.repo.AddInvoice(ctx, inv)
 }
 
 func (s *service) GetInvoice(context.Context, string) (*Invoice, error) {
+	// TODO: implement
 	return nil, errors.New("not implemented")
 }
 
 func (s *service) CancelInvoice(context.Context, string) error {
+	// TODO: implement
 	return errors.New("not implemented")
 }
 
 func (s *service) AddItem(context.Context, string, Item) error {
+	// TODO: implement
 	return errors.New("not implemented")
 }
 
 func (s *service) GetItem(context.Context, string) (*Item, error) {
+	// TODO: implement
 	return nil, errors.New("not implemented")
 }
 
@@ -86,6 +91,6 @@ func (s *service) UpdateInvoiceItemsStatus(ctx context.Context, invoiceID string
 	return s.repo.UpdateInvoiceItemsStatus(ctx, invoiceID, status)
 }
 
-func (s *service) ReplaceItems(context.Context, string, []Item) error {
-	return errors.New("not implemented")
+func (s *service) ReplaceItems(ctx context.Context, invoiceID string, newItems []Item) error {
+	return s.repo.ReplaceItems(ctx, invoiceID, newItems)
 }

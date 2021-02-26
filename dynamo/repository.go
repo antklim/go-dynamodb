@@ -73,6 +73,8 @@ func (inv *Invoice) ToInvoice() (*invoice.Invoice, error) {
 	}, nil
 }
 
+// TODO: Add invoiceID to Item
+
 // Item describes dynamodb representation of invoice.Item
 type Item struct {
 	PK        string    `dynamodbav:"pk"`
@@ -88,8 +90,8 @@ type Item struct {
 }
 
 // NewItem creates an instance of DynamoDB item from invoice.Item.
-func NewItem(inv invoice.Invoice, item invoice.Item) Item {
-	pk := itemPk(inv.ID)
+func NewItem(invoiceID string, item invoice.Item) Item {
+	pk := itemPk(invoiceID)
 	sk := itemSk(item.ID)
 
 	return Item{
@@ -164,7 +166,7 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 	}})
 
 	for _, item := range inv.Items {
-		dbitem := NewItem(inv, item)
+		dbitem := NewItem(inv.ID, item)
 		putInvoiceItemItem, err := dynamodbattribute.MarshalMap(dbitem)
 		if err != nil {
 			return err
@@ -187,18 +189,22 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 }
 
 func (r *repository) GetInvoice(ctx context.Context, invoiceID string) (*invoice.Invoice, error) {
+	// TODO: implement
 	return nil, errors.New("not implemented")
 }
 
 func (r *repository) CancelInvoice(ctx context.Context, invoiceID string) error {
+	// TODO: implement
 	return errors.New("not implemented")
 }
 
 func (r *repository) AddItem(ctx context.Context, invoiceID string, item invoice.Item) error {
+	// TODO: implement
 	return errors.New("not implemented")
 }
 
 func (r *repository) GetItem(ctx context.Context, itemID string) (*invoice.Item, error) {
+	// TODO: implement
 	return nil, errors.New("not implemented")
 }
 
@@ -265,7 +271,7 @@ func (r *repository) GetInvoiceItemsByStatus(
 func (r *repository) UpdateInvoiceItemsStatus(
 	ctx context.Context, invoiceID string, status invoice.Status) error {
 
-	items, err := r.GetInvoiceItemsByStatus(ctx, invoiceID, "CANCELLED")
+	items, err := r.GetInvoiceItemsByStatus(ctx, invoiceID, "NEW")
 	if err != nil {
 		return err
 	}
@@ -295,8 +301,45 @@ func (r *repository) UpdateInvoiceItemsStatus(
 	return err
 }
 
-func (r *repository) ReplaceItems(ctx context.Context, invoiceID string, items []invoice.Item) error {
-	return errors.New("not implemented")
+func (r *repository) ReplaceItems(
+	ctx context.Context, invoiceID string, newItems []invoice.Item) error {
+
+	items, err := r.GetInvoiceItemsByStatus(ctx, invoiceID, "NEW")
+	if err != nil {
+		return err
+	}
+	if len(items) == 0 {
+		return nil
+	}
+
+	upd := expression.Set(expression.Name("status"), expression.Value("CANCELLED"))
+	expr, err := expression.NewBuilder().WithUpdate(upd).Build()
+	if err != nil {
+		return err
+	}
+
+	updates := invoiceItemsToUpdates(items, invoiceID, r.table, expr)
+	puts, err := invoiceItemsToPuts(newItems, invoiceID, r.table)
+	if err != nil {
+		return err
+	}
+
+	transactionItems := []*dynamodb.TransactWriteItem{}
+	for _, update := range updates {
+		transactionItems = append(transactionItems, &dynamodb.TransactWriteItem{Update: update})
+	}
+	for _, put := range puts {
+		transactionItems = append(transactionItems, &dynamodb.TransactWriteItem{Put: put})
+	}
+
+	transaction := &dynamodb.TransactWriteItemsInput{TransactItems: transactionItems}
+	if err := transaction.Validate(); err != nil {
+		return err
+	}
+
+	_, err = r.client.TransactWriteItemsWithContext(ctx, transaction)
+
+	return err
 }
 
 func toInvoiceItems(rawItems []map[string]*dynamodb.AttributeValue) ([]invoice.Item, error) {
@@ -348,4 +391,23 @@ func invoiceItemsToUpdates(
 	}
 
 	return updates
+}
+
+func invoiceItemsToPuts(items []invoice.Item, invoiceID string, table *string) ([]*dynamodb.Put, error) {
+	putItems := make([]*dynamodb.Put, len(items))
+
+	for idx, item := range items {
+		dbitem := NewItem(invoiceID, item)
+		putItem, err := dynamodbattribute.MarshalMap(dbitem)
+		if err != nil {
+			return nil, err
+		}
+
+		putItems[idx] = &dynamodb.Put{
+			TableName: table,
+			Item:      putItem,
+		}
+	}
+
+	return putItems, nil
 }

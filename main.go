@@ -89,7 +89,37 @@ func main() {
 	{
 		// 4. Update all invoce's items status
 		ctx := context.Background()
-		err := service.UpdateInvoiceItemsStatus(ctx, inv.ID, "NEW")
+		err := service.UpdateInvoiceItemsStatus(ctx, inv.ID, "CANCELLED")
+		log.Println(err)
+	}
+
+	{
+		// 5. Replace all invoce's items in status NEW with the new set of items
+		ctx := context.Background()
+		now := time.Now()
+		newItems := []invoice.Item{
+			{
+				ID:        uuid.NewString(),
+				SKU:       "300",
+				Name:      "Drums set",
+				Price:     132000,
+				Qty:       1,
+				Status:    "NEW",
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+			{
+				ID:        uuid.NewString(),
+				SKU:       "301",
+				Name:      "Drum sticks",
+				Price:     4200,
+				Qty:       2,
+				Status:    "NEW",
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+		}
+		err := service.ReplaceItems(ctx, inv.ID, newItems)
 		log.Println(err)
 	}
 }
