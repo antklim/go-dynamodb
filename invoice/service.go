@@ -82,8 +82,8 @@ func (s *service) GetInvoiceItemsByStatus(ctx context.Context, invoiceID string,
 	return s.repo.GetInvoiceItemsByStatus(ctx, invoiceID, status)
 }
 
-func (s *service) UpdateInvoiceItemsStatus(context.Context, string, Status) error {
-	return errors.New("not implemented")
+func (s *service) UpdateInvoiceItemsStatus(ctx context.Context, invoiceID string, status Status) error {
+	return s.repo.UpdateInvoiceItemsStatus(ctx, invoiceID, status)
 }
 
 func (s *service) ReplaceItems(context.Context, string, []Item) error {

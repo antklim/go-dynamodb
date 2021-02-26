@@ -262,8 +262,37 @@ func (r *repository) GetInvoiceItemsByStatus(
 	return toInvoiceItems(result.Items)
 }
 
-func (r *repository) UpdateInvoiceItemsStatus(ctx context.Context, invoiceID string, status invoice.Status) error {
-	return errors.New("not implemented")
+func (r *repository) UpdateInvoiceItemsStatus(
+	ctx context.Context, invoiceID string, status invoice.Status) error {
+
+	items, err := r.GetInvoiceItemsByStatus(ctx, invoiceID, "CANCELLED")
+	if err != nil {
+		return err
+	}
+	if len(items) == 0 {
+		return nil
+	}
+
+	upd := expression.Set(expression.Name("status"), expression.Value(status))
+	expr, err := expression.NewBuilder().WithUpdate(upd).Build()
+	if err != nil {
+		return err
+	}
+
+	updates := invoiceItemsToUpdates(items, invoiceID, r.table, expr)
+	updateItems := make([]*dynamodb.TransactWriteItem, len(updates))
+	for idx, update := range updates {
+		updateItems[idx] = &dynamodb.TransactWriteItem{Update: update}
+	}
+
+	transaction := &dynamodb.TransactWriteItemsInput{TransactItems: updateItems}
+	if err := transaction.Validate(); err != nil {
+		return err
+	}
+
+	_, err = r.client.TransactWriteItemsWithContext(ctx, transaction)
+
+	return err
 }
 
 func (r *repository) ReplaceItems(ctx context.Context, invoiceID string, items []invoice.Item) error {
@@ -286,4 +315,37 @@ func toInvoiceItems(rawItems []map[string]*dynamodb.AttributeValue) ([]invoice.I
 	}
 
 	return invoiceItems, nil
+}
+
+func invoiceItemsToUpdates(
+	items []invoice.Item,
+	invoiceID string,
+	table *string,
+	expr expression.Expression,
+) []*dynamodb.Update {
+
+	pk := aws.String(itemPk(invoiceID))
+
+	updates := make([]*dynamodb.Update, len(items))
+
+	for idx, item := range items {
+		sk := aws.String(itemSk(item.ID))
+		updates[idx] = &dynamodb.Update{
+			TableName: table,
+			Key: map[string]*dynamodb.AttributeValue{
+				"pk": {
+					S: pk,
+				},
+				"sk": {
+					S: sk,
+				},
+			},
+			ExpressionAttributeNames:  expr.Names(),
+			ExpressionAttributeValues: expr.Values(),
+			ConditionExpression:       expr.Condition(),
+			UpdateExpression:          expr.Update(),
+		}
+	}
+
+	return updates
 }

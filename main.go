@@ -79,10 +79,17 @@ func main() {
 	}
 
 	{
-		// 3. Get new items of the invoice
+		// 3. Get NEW items of the invoice
 		ctx := context.Background()
 		items, err := service.GetInvoiceItemsByStatus(ctx, inv.ID, "NEW")
 		log.Printf("%+v\n", items)
+		log.Println(err)
+	}
+
+	{
+		// 4. Update all invoce's items status
+		ctx := context.Background()
+		err := service.UpdateInvoiceItemsStatus(ctx, inv.ID, "NEW")
 		log.Println(err)
 	}
 }
