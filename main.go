@@ -13,6 +13,10 @@ import (
 	"github.com/google/uuid"
 )
 
+// TODO: Use json to populate DB
+// TODO: Clean DB before and after script run
+// TODO: Add flags to control DB clean
+
 func main() {
 	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String("ap-southeast-2")}))
 	client := dynamodb.New(sess)
