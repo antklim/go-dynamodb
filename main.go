@@ -132,4 +132,13 @@ func main() {
 		err := service.ReplaceItems(ctx, invoiceID, newItems)
 		log.Println(err)
 	}
+
+	{
+		// 6. Get invoice
+		ctx := context.Background()
+		inv, err := service.GetInvoice(ctx, invoiceID)
+		log.Println("invoiceID", invoiceID)
+		log.Println(err)
+		log.Println("invoice", inv)
+	}
 }

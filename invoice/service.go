@@ -56,13 +56,11 @@ func NewService(repo Repository) Service {
 }
 
 func (s *service) StoreInvoice(ctx context.Context, inv Invoice) error {
-	// TODO: implement
 	return s.repo.AddInvoice(ctx, inv)
 }
 
-func (s *service) GetInvoice(context.Context, string) (*Invoice, error) {
-	// TODO: implement
-	return nil, errors.New("not implemented")
+func (s *service) GetInvoice(ctx context.Context, invoiceID string) (*Invoice, error) {
+	return s.repo.GetInvoice(ctx, invoiceID)
 }
 
 func (s *service) CancelInvoice(context.Context, string) error {

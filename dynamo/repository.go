@@ -169,22 +169,19 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 }
 
 func (r *repository) GetInvoice(ctx context.Context, invoiceID string) (*invoice.Invoice, error) {
-	pk := invoicePk(invoiceID)
-	sk := invoiceSk(invoiceID)
-	filt := expression.And(
-		expression.Name("pk").Equal(expression.Value(pk)),
-		expression.Name("sk").Equal(expression.Value(sk)),
-	)
+	primaryKey := map[string]string{
+		"pk": invoicePk(invoiceID),
+		"sk": invoiceSk(invoiceID),
+	}
 
-	expr, err := expression.NewBuilder().WithFilter(filt).Build()
+	key, err := dynamodbattribute.MarshalMap(primaryKey)
 	if err != nil {
 		return nil, err
 	}
 
 	input := &dynamodb.GetItemInput{
-		TableName:                r.table,
-		ExpressionAttributeNames: expr.Names(),
-		Key:                      expr.Values(),
+		TableName: r.table,
+		Key:       key,
 	}
 
 	result, err := r.client.GetItemWithContext(ctx, input)
