@@ -10,14 +10,23 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 )
 
-func invoicePk(invoiceID string) string {
+func invoicePartitionKey(invoiceID string) string {
 	elems := []string{invoicePkPrefix, invoiceID}
 	return strings.Join(elems, keySeparator)
 }
 
-func invoiceSk(invoiceID string) string {
+func invoiceSortKey(invoiceID string) string {
 	elems := []string{invoiceSkPrefix, invoiceID}
 	return strings.Join(elems, keySeparator)
+}
+
+func invoicePrimaryKey(invoiceID string) (map[string]*dynamodb.AttributeValue, error) {
+	primaryKey := map[string]string{
+		"pk": invoicePartitionKey(invoiceID),
+		"sk": invoiceSortKey(invoiceID),
+	}
+
+	return dynamodbattribute.MarshalMap(primaryKey)
 }
 
 func itemPk(invoiceID string) string {

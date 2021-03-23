@@ -37,8 +37,8 @@ type Invoice struct {
 
 // NewInvoice creates an instance of DynamoDB invoice from invoice.Invoice.
 func NewInvoice(inv invoice.Invoice) Invoice {
-	pk := invoicePk(inv.ID)
-	sk := invoiceSk(inv.ID)
+	pk := invoicePartitionKey(inv.ID)
+	sk := invoiceSortKey(inv.ID)
 
 	return Invoice{
 		PK:           pk,
@@ -169,19 +169,14 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 }
 
 func (r *repository) GetInvoice(ctx context.Context, invoiceID string) (*invoice.Invoice, error) {
-	primaryKey := map[string]string{
-		"pk": invoicePk(invoiceID),
-		"sk": invoiceSk(invoiceID),
-	}
-
-	key, err := dynamodbattribute.MarshalMap(primaryKey)
+	pk, err := invoicePrimaryKey(invoiceID)
 	if err != nil {
 		return nil, err
 	}
 
 	input := &dynamodb.GetItemInput{
 		TableName: r.table,
-		Key:       key,
+		Key:       pk,
 	}
 
 	result, err := r.client.GetItemWithContext(ctx, input)
