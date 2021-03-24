@@ -89,8 +89,8 @@ type Item struct {
 
 // NewItem creates an instance of DynamoDB item from invoice.Item.
 func NewItem(item invoice.Item) Item {
-	pk := itemPk(item.InvoiceID)
-	sk := itemSk(item.ID)
+	pk := itemPartitionKey(item.InvoiceID)
+	sk := itemSortKey(item.ID)
 
 	return Item{
 		PK:        pk,
@@ -230,7 +230,7 @@ func (r *repository) GetItemsByStatus(ctx context.Context, status invoice.Status
 func (r *repository) GetInvoiceItemsByStatus(
 	ctx context.Context, invoiceID string, status invoice.Status) ([]invoice.Item, error) {
 
-	pk := itemPk(invoiceID)
+	pk := itemPartitionKey(invoiceID)
 	keyCond := expression.KeyAnd(
 		expression.Key("pk").Equal(expression.Value(pk)),
 		expression.Key("sk").BeginsWith(itemSkPrefix+keySeparator),
@@ -279,7 +279,11 @@ func (r *repository) UpdateInvoiceItemsStatus(
 		return err
 	}
 
-	updates := invoiceItemsToUpdates(items, r.table, expr)
+	updates, err := invoiceItemsToUpdates(items, r.table, expr)
+	if err != nil {
+		return err
+	}
+
 	updateItems := make([]*dynamodb.TransactWriteItem, len(updates))
 	for idx, update := range updates {
 		updateItems[idx] = &dynamodb.TransactWriteItem{Update: update}
@@ -312,7 +316,11 @@ func (r *repository) ReplaceItems(
 		return err
 	}
 
-	updates := invoiceItemsToUpdates(items, r.table, expr)
+	updates, err := invoiceItemsToUpdates(items, r.table, expr)
+	if err != nil {
+		return err
+	}
+
 	puts, err := invoiceItemsToPuts(newItems, r.table)
 	if err != nil {
 		return err

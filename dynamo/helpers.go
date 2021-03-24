@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/antklim/go-dynamodb/invoice"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
@@ -29,14 +28,23 @@ func invoicePrimaryKey(invoiceID string) (map[string]*dynamodb.AttributeValue, e
 	return dynamodbattribute.MarshalMap(primaryKey)
 }
 
-func itemPk(invoiceID string) string {
+func itemPartitionKey(invoiceID string) string {
 	elems := []string{itemPkPrefix, invoiceID}
 	return strings.Join(elems, keySeparator)
 }
 
-func itemSk(itemID string) string {
+func itemSortKey(itemID string) string {
 	elems := []string{itemSkPrefix, itemID}
 	return strings.Join(elems, keySeparator)
+}
+
+func itemPrimaryKey(invoiceID, itemID string) (map[string]*dynamodb.AttributeValue, error) {
+	primaryKey := map[string]string{
+		"pk": itemPartitionKey(invoiceID),
+		"sk": itemSortKey(itemID),
+	}
+
+	return dynamodbattribute.MarshalMap(primaryKey)
 }
 
 func toInvoice(rawItem map[string]*dynamodb.AttributeValue) (*invoice.Invoice, error) {
@@ -70,23 +78,18 @@ func toInvoiceItems(rawItems []map[string]*dynamodb.AttributeValue) ([]invoice.I
 	return invoiceItems, nil
 }
 
-func invoiceItemsToUpdates(items []invoice.Item, table *string, expr expression.Expression) []*dynamodb.Update {
+func invoiceItemsToUpdates(items []invoice.Item, table *string, expr expression.Expression) ([]*dynamodb.Update, error) {
 	updates := make([]*dynamodb.Update, len(items))
 
 	for idx, item := range items {
-		pk := aws.String(itemPk(item.InvoiceID))
-		sk := aws.String(itemSk(item.ID))
+		pk, err := itemPrimaryKey(item.InvoiceID, item.ID)
+		if err != nil {
+			return nil, err
+		}
 
 		updates[idx] = &dynamodb.Update{
-			TableName: table,
-			Key: map[string]*dynamodb.AttributeValue{
-				"pk": {
-					S: pk,
-				},
-				"sk": {
-					S: sk,
-				},
-			},
+			TableName:                 table,
+			Key:                       pk,
 			ExpressionAttributeNames:  expr.Names(),
 			ExpressionAttributeValues: expr.Values(),
 			ConditionExpression:       expr.Condition(),
@@ -94,7 +97,7 @@ func invoiceItemsToUpdates(items []invoice.Item, table *string, expr expression.
 		}
 	}
 
-	return updates
+	return updates, nil
 }
 
 func invoiceItemsToPuts(items []invoice.Item, table *string) ([]*dynamodb.Put, error) {
