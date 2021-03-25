@@ -1,0 +1,35 @@
+[
+  {
+    "ID": "3223f4b4-e82d-4293-b5bf-2ad1ed13a766",
+    "InvoiceID": "170bf55e-ca81-4a17-99ad-54f6411d610b",
+    "SKU": "100",
+    "Name": "Guitar",
+    "Price": 75000,
+    "Qty": 1,
+    "Status": "NEW",
+    "CreatedAt": "2021-03-17T16:08:08.911318+11:00",
+    "UpdatedAt": "2021-03-17T16:08:08.911318+11:00"
+  },
+  {
+    "ID": "7e0ac5cc-557b-4c7f-bcb9-674bd8603f93",
+    "InvoiceID": "170bf55e-ca81-4a17-99ad-54f6411d610b",
+    "SKU": "101",
+    "Name": "Guitar strings",
+    "Price": 8300,
+    "Qty": 3,
+    "Status": "PENDING",
+    "CreatedAt": "2021-03-17T16:08:08.911318+11:00",
+    "UpdatedAt": "2021-03-17T16:08:08.911318+11:00"
+  },
+  {
+    "ID": "28b02a88-0a3f-4abc-b7ae-1bffc374b7de",
+    "InvoiceID": "170bf55e-ca81-4a17-99ad-54f6411d610b",
+    "SKU": "102",
+    "Name": "Pick",
+    "Price": 1000,
+    "Qty": 2,
+    "Status": "NEW",
+    "CreatedAt": "2021-03-17T16:08:08.911318+11:00",
+    "UpdatedAt": "2021-03-17T16:08:08.911318+11:00"
+  }
+]

@@ -192,9 +192,20 @@ func (r *repository) CancelInvoice(ctx context.Context, invoiceID string) error 
 	return errors.New("not implemented")
 }
 
-func (r *repository) AddItem(ctx context.Context, invoiceID string, item invoice.Item) error {
-	// TODO: implement
-	return errors.New("not implemented")
+func (r *repository) AddItem(ctx context.Context, item invoice.Item) error {
+	dbitem := NewItem(item)
+	putItem, err := dynamodbattribute.MarshalMap(dbitem)
+	if err != nil {
+		return err
+	}
+
+	input := &dynamodb.PutItemInput{
+		TableName: r.table,
+		Item:      putItem,
+	}
+
+	_, err = r.client.PutItemWithContext(ctx, input)
+	return err
 }
 
 func (r *repository) GetItem(ctx context.Context, itemID string) (*invoice.Item, error) {

@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"time"
 
@@ -13,7 +15,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// TODO: Use json to populate DB
 // TODO: Clean DB before and after script run
 // TODO: Add flags to control DB clean
 
@@ -23,55 +24,43 @@ func main() {
 	repo := dynamo.NewRepository(client, "invoices")
 	service := invoice.NewService(repo)
 
-	var inv invoice.Invoice
-	invoiceID := uuid.NewString()
+	/* Load invoice and items from JSON */
+	// invs, err := getInvoices()
+	// if err != nil {
+	// 	log.Panic(err)
+	// }
+
+	// items, err := getInvoiceItems()
+	// if err != nil {
+	// 	log.Panic(err)
+	// }
+
+	// inv := invs[0]
+	// {
+	// 	// 1. Store invoice
+	// 	log.Println(inv)
+	// 	ctx := context.Background()
+	// 	err := service.StoreInvoice(ctx, inv)
+	// 	log.Println(err)
+	// }
+
+	// {
+	// 	// 2. Replace all invoce's items
+	// 	log.Println(items)
+	// 	for _, item := range items {
+	// 		ctx := context.Background()
+	// 		err := service.AddItem(ctx, item)
+	// 		if err != nil {
+	// 			log.Println(err)
+	// 		}
+	// 	}
+	// }
+	/********************************/
+
+	/* Create new invoice and items */
+	inv := createInvoice()
 	{
-		// 1. Create invoice
-		now := time.Now()
-		inv = invoice.Invoice{
-			ID:           invoiceID,
-			Number:       "123",
-			CustomerName: "John Doe",
-			Status:       "NEW",
-			Date:         now,
-			Items: []invoice.Item{
-				{
-					ID:        uuid.NewString(),
-					InvoiceID: invoiceID,
-					SKU:       "100",
-					Name:      "Guitar",
-					Price:     75000,
-					Qty:       1,
-					Status:    "NEW",
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-				{
-					ID:        uuid.NewString(),
-					InvoiceID: invoiceID,
-					SKU:       "101",
-					Name:      "Guitar strings",
-					Price:     8300,
-					Qty:       3,
-					Status:    "PENDING",
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-				{
-					ID:        uuid.NewString(),
-					InvoiceID: invoiceID,
-					SKU:       "102",
-					Name:      "Pick",
-					Price:     1000,
-					Qty:       2,
-					Status:    "NEW",
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-			},
-			CreatedAt: now,
-			UpdatedAt: now,
-		}
+		// 1. Store invoice
 		ctx := context.Background()
 		err := service.StoreInvoice(ctx, inv)
 		log.Println(inv)
@@ -89,7 +78,7 @@ func main() {
 	{
 		// 3. Get NEW items of the invoice
 		ctx := context.Background()
-		items, err := service.GetInvoiceItemsByStatus(ctx, invoiceID, "NEW")
+		items, err := service.GetInvoiceItemsByStatus(ctx, inv.ID, "NEW")
 		log.Printf("%+v\n", items)
 		log.Println(err)
 	}
@@ -97,7 +86,7 @@ func main() {
 	{
 		// 4. Update all invoce's items status
 		ctx := context.Background()
-		err := service.UpdateInvoiceItemsStatus(ctx, invoiceID, "CANCELLED")
+		err := service.UpdateInvoiceItemsStatus(ctx, inv.ID, "CANCELLED")
 		log.Println(err)
 	}
 
@@ -108,7 +97,7 @@ func main() {
 		newItems := []invoice.Item{
 			{
 				ID:        uuid.NewString(),
-				InvoiceID: invoiceID,
+				InvoiceID: inv.ID,
 				SKU:       "300",
 				Name:      "Drums set",
 				Price:     132000,
@@ -119,7 +108,7 @@ func main() {
 			},
 			{
 				ID:        uuid.NewString(),
-				InvoiceID: invoiceID,
+				InvoiceID: inv.ID,
 				SKU:       "301",
 				Name:      "Drum sticks",
 				Price:     4200,
@@ -129,16 +118,89 @@ func main() {
 				UpdatedAt: now,
 			},
 		}
-		err := service.ReplaceItems(ctx, invoiceID, newItems)
+		err := service.ReplaceItems(ctx, inv.ID, newItems)
 		log.Println(err)
 	}
 
 	{
 		// 6. Get invoice
 		ctx := context.Background()
-		inv, err := service.GetInvoice(ctx, invoiceID)
-		log.Println("invoiceID", invoiceID)
+		inv, err := service.GetInvoice(ctx, inv.ID)
+		log.Println("invoiceID", inv.ID)
 		log.Println(err)
 		log.Println("invoice", inv)
 	}
+}
+
+func getInvoices() ([]invoice.Invoice, error) {
+	raw, err := ioutil.ReadFile("./data/invoices.json")
+	if err != nil {
+		return nil, err
+	}
+
+	var invoices []invoice.Invoice
+	err = json.Unmarshal(raw, &invoices)
+	return invoices, err
+}
+
+func getInvoiceItems() ([]invoice.Item, error) {
+	raw, err := ioutil.ReadFile("./data/items.json")
+	if err != nil {
+		return nil, err
+	}
+
+	var items []invoice.Item
+	err = json.Unmarshal(raw, &items)
+	return items, err
+}
+
+func createInvoice() invoice.Invoice {
+	invoiceID := uuid.NewString()
+	now := time.Now()
+	inv := invoice.Invoice{
+		ID:           invoiceID,
+		Number:       "123",
+		CustomerName: "John Doe",
+		Status:       "NEW",
+		Date:         now,
+		Items: []invoice.Item{
+			{
+				ID:        uuid.NewString(),
+				InvoiceID: invoiceID,
+				SKU:       "100",
+				Name:      "Guitar",
+				Price:     75000,
+				Qty:       1,
+				Status:    "NEW",
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+			{
+				ID:        uuid.NewString(),
+				InvoiceID: invoiceID,
+				SKU:       "101",
+				Name:      "Guitar strings",
+				Price:     8300,
+				Qty:       3,
+				Status:    "PENDING",
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+			{
+				ID:        uuid.NewString(),
+				InvoiceID: invoiceID,
+				SKU:       "102",
+				Name:      "Pick",
+				Price:     1000,
+				Qty:       2,
+				Status:    "NEW",
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	return inv
 }

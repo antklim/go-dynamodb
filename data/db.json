@@ -1,0 +1,141 @@
+{
+    "Items": [
+        {
+            "customerName": {
+                "S": "John Doe"
+            },
+            "date": {
+                "S": "20210317"
+            },
+            "number": {
+                "S": "123"
+            },
+            "updatedAt": {
+                "S": "2021-03-17T16:08:08.911318+11:00"
+            },
+            "status": {
+                "S": "NEW"
+            },
+            "createdAt": {
+                "S": "2021-03-17T16:08:08.911318+11:00"
+            },
+            "sk": {
+                "S": "INVOICE#170bf55e-ca81-4a17-99ad-54f6411d610b"
+            },
+            "pk": {
+                "S": "INVOICE#170bf55e-ca81-4a17-99ad-54f6411d610b"
+            },
+            "id": {
+                "S": "170bf55e-ca81-4a17-99ad-54f6411d610b"
+            }
+        },
+        {
+            "updatedAt": {
+                "S": "2021-03-17T16:08:08.911318+11:00"
+            },
+            "status": {
+                "S": "NEW"
+            },
+            "qty": {
+                "N": "2"
+            },
+            "createdAt": {
+                "S": "2021-03-17T16:08:08.911318+11:00"
+            },
+            "sk": {
+                "S": "ITEM#28b02a88-0a3f-4abc-b7ae-1bffc374b7de"
+            },
+            "pk": {
+                "S": "INVOICE#170bf55e-ca81-4a17-99ad-54f6411d610b"
+            },
+            "price": {
+                "N": "1000"
+            },
+            "invoiceId": {
+                "S": "170bf55e-ca81-4a17-99ad-54f6411d610b"
+            },
+            "id": {
+                "S": "28b02a88-0a3f-4abc-b7ae-1bffc374b7de"
+            },
+            "name": {
+                "S": "Pick"
+            },
+            "sku": {
+                "S": "102"
+            }
+        },
+        {
+            "updatedAt": {
+                "S": "2021-03-17T16:08:08.911318+11:00"
+            },
+            "status": {
+                "S": "NEW"
+            },
+            "qty": {
+                "N": "1"
+            },
+            "createdAt": {
+                "S": "2021-03-17T16:08:08.911318+11:00"
+            },
+            "sk": {
+                "S": "ITEM#3223f4b4-e82d-4293-b5bf-2ad1ed13a766"
+            },
+            "pk": {
+                "S": "INVOICE#170bf55e-ca81-4a17-99ad-54f6411d610b"
+            },
+            "price": {
+                "N": "75000"
+            },
+            "invoiceId": {
+                "S": "170bf55e-ca81-4a17-99ad-54f6411d610b"
+            },
+            "id": {
+                "S": "3223f4b4-e82d-4293-b5bf-2ad1ed13a766"
+            },
+            "name": {
+                "S": "Guitar"
+            },
+            "sku": {
+                "S": "100"
+            }
+        },
+        {
+            "updatedAt": {
+                "S": "2021-03-17T16:08:08.911318+11:00"
+            },
+            "status": {
+                "S": "PENDING"
+            },
+            "qty": {
+                "N": "3"
+            },
+            "createdAt": {
+                "S": "2021-03-17T16:08:08.911318+11:00"
+            },
+            "sk": {
+                "S": "ITEM#7e0ac5cc-557b-4c7f-bcb9-674bd8603f93"
+            },
+            "pk": {
+                "S": "INVOICE#170bf55e-ca81-4a17-99ad-54f6411d610b"
+            },
+            "price": {
+                "N": "8300"
+            },
+            "invoiceId": {
+                "S": "170bf55e-ca81-4a17-99ad-54f6411d610b"
+            },
+            "id": {
+                "S": "7e0ac5cc-557b-4c7f-bcb9-674bd8603f93"
+            },
+            "name": {
+                "S": "Guitar strings"
+            },
+            "sku": {
+                "S": "101"
+            }
+        }
+    ],
+    "Count": 4,
+    "ScannedCount": 4,
+    "ConsumedCapacity": null
+}

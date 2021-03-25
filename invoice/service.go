@@ -38,7 +38,7 @@ type Service interface {
 	StoreInvoice(context.Context, Invoice) error
 	GetInvoice(context.Context, string) (*Invoice, error) // gets invoice and all its items
 	CancelInvoice(context.Context, string) error          // cancels invoice and all its items
-	AddItem(context.Context, string, Item) error          // adds item to invoice
+	AddItem(context.Context, Item) error                  // adds invoice's item
 	GetItem(context.Context, string) (*Item, error)
 	GetItemsByStatus(context.Context, Status) ([]Item, error)
 	GetInvoiceItemsByStatus(context.Context, string, Status) ([]Item, error)
@@ -68,9 +68,8 @@ func (s *service) CancelInvoice(context.Context, string) error {
 	return errors.New("not implemented")
 }
 
-func (s *service) AddItem(context.Context, string, Item) error {
-	// TODO: implement
-	return errors.New("not implemented")
+func (s *service) AddItem(ctx context.Context, item Item) error {
+	return s.repo.AddItem(ctx, item)
 }
 
 func (s *service) GetItem(context.Context, string) (*Item, error) {
