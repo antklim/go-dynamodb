@@ -87,6 +87,13 @@ type Item struct {
 	UpdatedAt time.Time `dynamodbav:"updatedAt"`
 }
 
+// Product describes product properties of Item
+type Product struct {
+	SKU   string `dynamodbav:"sku"`
+	Name  string `dynamodbav:"name"`
+	Price uint   `dynamodbav:"price"`
+}
+
 // NewItem creates an instance of DynamoDB item from invoice.Item.
 func NewItem(item invoice.Item) Item {
 	pk := itemPartitionKey(item.InvoiceID)
@@ -139,8 +146,8 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 		return err
 	}
 
-	putItems := []*dynamodb.TransactWriteItem{}
-	putItems = append(putItems, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{
+	transactItems := []*dynamodb.TransactWriteItem{}
+	transactItems = append(transactItems, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{
 		TableName: r.table,
 		Item:      putInvoiceItem,
 	}})
@@ -152,19 +159,18 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 			return err
 		}
 
-		putItems = append(putItems, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{
+		transactItems = append(transactItems, &dynamodb.TransactWriteItem{Put: &dynamodb.Put{
 			TableName: r.table,
 			Item:      putInvoiceItemItem,
 		}})
 	}
 
-	transaction := &dynamodb.TransactWriteItemsInput{TransactItems: putItems}
+	transaction := &dynamodb.TransactWriteItemsInput{TransactItems: transactItems}
 	if err := transaction.Validate(); err != nil {
 		return err
 	}
 
 	_, err = r.client.TransactWriteItemsWithContext(ctx, transaction)
-
 	return err
 }
 
@@ -208,9 +214,61 @@ func (r *repository) AddItem(ctx context.Context, item invoice.Item) error {
 	return err
 }
 
-func (r *repository) GetItem(ctx context.Context, itemID string) (*invoice.Item, error) {
-	// TODO: implement
-	return nil, errors.New("not implemented")
+func (r *repository) GetItem(ctx context.Context, invoiceID, itemID string) (*invoice.Item, error) {
+	pk, err := itemPrimaryKey(invoiceID, itemID)
+	if err != nil {
+		return nil, err
+	}
+
+	proj := expression.NamesList(expression.Name("sku"), expression.Name("name"), expression.Name("price"))
+	expr, err := expression.NewBuilder().WithProjection(proj).Build()
+	if err != nil {
+		return nil, err
+	}
+
+	input := &dynamodb.GetItemInput{
+		TableName:            r.table,
+		ProjectionExpression: expr.Projection(),
+		Key:                  pk,
+	}
+
+	result, err := r.client.GetItemWithContext(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return toItem(result.Item)
+}
+
+func (r *repository) GetItemProduct(ctx context.Context, invoiceID, itemID string) (*Product, error) {
+	pk, err := itemPrimaryKey(invoiceID, itemID)
+	if err != nil {
+		return nil, err
+	}
+
+	proj := expression.NamesList(expression.Name("sku"), expression.Name("name"), expression.Name("price"))
+	expr, err := expression.NewBuilder().WithProjection(proj).Build()
+	if err != nil {
+		return nil, err
+	}
+
+	input := &dynamodb.GetItemInput{
+		TableName:            r.table,
+		ProjectionExpression: expr.Projection(),
+		Key:                  pk,
+	}
+
+	result, err := r.client.GetItemWithContext(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	product := Product{}
+	if err := dynamodbattribute.UnmarshalMap(result.Item, &product); err != nil {
+		return nil, err
+	}
+
+	return &product, nil
 }
 
 func (r *repository) GetItemsByStatus(ctx context.Context, status invoice.Status) ([]invoice.Item, error) {
@@ -306,7 +364,6 @@ func (r *repository) UpdateInvoiceItemsStatus(
 	}
 
 	_, err = r.client.TransactWriteItemsWithContext(ctx, transaction)
-
 	return err
 }
 
@@ -351,6 +408,5 @@ func (r *repository) ReplaceItems(
 	}
 
 	_, err = r.client.TransactWriteItemsWithContext(ctx, transaction)
-
 	return err
 }

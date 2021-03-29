@@ -60,6 +60,20 @@ func toInvoice(rawItem map[string]*dynamodb.AttributeValue) (*invoice.Invoice, e
 	return dbInvoice.ToInvoice()
 }
 
+func toItem(rawItem map[string]*dynamodb.AttributeValue) (*invoice.Item, error) {
+	if rawItem == nil {
+		return nil, nil
+	}
+
+	dbItem := Item{}
+	if err := dynamodbattribute.UnmarshalMap(rawItem, &dbItem); err != nil {
+		return nil, err
+	}
+
+	item := dbItem.ToItem()
+	return &item, nil
+}
+
 func toInvoiceItems(rawItems []map[string]*dynamodb.AttributeValue) ([]invoice.Item, error) {
 	if len(rawItems) == 0 {
 		return nil, nil
