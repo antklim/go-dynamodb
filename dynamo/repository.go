@@ -267,6 +267,21 @@ func (r *repository) GetItemProduct(ctx context.Context, invoiceID, itemID strin
 	return product.ToProduct(), nil
 }
 
+func (r *repository) DeleteItem(ctx context.Context, invoiceID, itemID string) error {
+	pk, err := itemPrimaryKey(invoiceID, itemID)
+	if err != nil {
+		return err
+	}
+
+	input := &dynamodb.DeleteItemInput{
+		TableName: r.table,
+		Key:       pk,
+	}
+
+	_, err = r.client.DeleteItemWithContext(ctx, input)
+	return err
+}
+
 func (r *repository) GetItemsByStatus(ctx context.Context, status invoice.Status) ([]invoice.Item, error) {
 	filt := expression.And(
 		expression.Name("sk").BeginsWith(itemSkPrefix+keySeparator),
