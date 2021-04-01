@@ -72,7 +72,7 @@ func main() {
 		// 2. Get all new items
 		log.Println("2. Get all new items =============================")
 		ctx := context.Background()
-		items, err := service.GetItemsByStatus(ctx, "NEW")
+		items, err := service.GetItemsByStatus(ctx, invoice.New)
 		log.Printf("%+v\n", items)
 		log.Println(err)
 	}
@@ -81,7 +81,7 @@ func main() {
 		// 3. Get NEW items of the invoice
 		log.Println("3. Get NEW items of the invoice ==================")
 		ctx := context.Background()
-		items, err := service.GetInvoiceItemsByStatus(ctx, inv.ID, "NEW")
+		items, err := service.GetInvoiceItemsByStatus(ctx, inv.ID, invoice.New)
 		log.Printf("%+v\n", items)
 		log.Println(err)
 	}
@@ -90,7 +90,7 @@ func main() {
 		// 4. Update all invoce's items status
 		log.Println("4. Update all invoce's items status ==============")
 		ctx := context.Background()
-		err := service.UpdateInvoiceItemsStatus(ctx, inv.ID, "CANCELLED")
+		err := service.UpdateInvoiceItemsStatus(ctx, inv.ID, invoice.Cancelled)
 		log.Println(err)
 	}
 
@@ -107,7 +107,7 @@ func main() {
 				Name:      "Drums set",
 				Price:     132000,
 				Qty:       1,
-				Status:    "NEW",
+				Status:    invoice.New,
 				CreatedAt: now,
 				UpdatedAt: now,
 			},
@@ -118,7 +118,7 @@ func main() {
 				Name:      "Drum sticks",
 				Price:     4200,
 				Qty:       2,
-				Status:    "NEW",
+				Status:    invoice.New,
 				CreatedAt: now,
 				UpdatedAt: now,
 			},
@@ -139,19 +139,34 @@ func main() {
 
 	{
 		// 7. Get item
-		log.Println("6. Get item ======================================")
+		log.Println("7. Get item ======================================")
 		ctx := context.Background()
-		item, err := service.GetItem(ctx, inv.ID, inv.Items[0].ID)
+		itemID := inv.Items[0].ID
+		item, err := service.GetItem(ctx, inv.ID, itemID)
+		log.Println("itemID", itemID)
 		log.Println("item", item)
 		log.Println(err)
 	}
 
 	{
 		// 8. Get item product
-		log.Println("6. Get product ===================================")
+		log.Println("8. Get item product ==============================")
 		ctx := context.Background()
 		product, err := service.GetItemProduct(ctx, inv.ID, inv.Items[0].ID)
 		log.Println("product", product)
+		log.Println(err)
+	}
+
+	{
+		// 9. Cancel invoice item
+		log.Println("9. Cancel invoice item ===========================")
+		ctx := context.Background()
+		itemID := inv.Items[0].ID
+		log.Println("itemID", itemID)
+		err := service.CancelInvoiceItem(ctx, inv.ID, itemID)
+		log.Println(err)
+		item, err := service.GetItem(ctx, inv.ID, itemID)
+		log.Println("item", item)
 		log.Println(err)
 	}
 }
@@ -185,7 +200,7 @@ func createInvoice() invoice.Invoice {
 		ID:           invoiceID,
 		Number:       "123",
 		CustomerName: "John Doe",
-		Status:       "NEW",
+		Status:       invoice.New,
 		Date:         now,
 		Items: []invoice.Item{
 			{
@@ -195,7 +210,7 @@ func createInvoice() invoice.Invoice {
 				Name:      "Guitar",
 				Price:     75000,
 				Qty:       1,
-				Status:    "NEW",
+				Status:    invoice.New,
 				CreatedAt: now,
 				UpdatedAt: now,
 			},
@@ -206,7 +221,7 @@ func createInvoice() invoice.Invoice {
 				Name:      "Guitar strings",
 				Price:     8300,
 				Qty:       3,
-				Status:    "PENDING",
+				Status:    invoice.Pending,
 				CreatedAt: now,
 				UpdatedAt: now,
 			},
@@ -217,7 +232,7 @@ func createInvoice() invoice.Invoice {
 				Name:      "Pick",
 				Price:     1000,
 				Qty:       2,
-				Status:    "NEW",
+				Status:    invoice.New,
 				CreatedAt: now,
 				UpdatedAt: now,
 			},

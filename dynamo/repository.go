@@ -2,7 +2,6 @@ package dynamo
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/antklim/go-dynamodb/invoice"
@@ -201,11 +200,6 @@ func (r *repository) GetInvoice(ctx context.Context, invoiceID string) (*invoice
 	return toInvoice(result.Item)
 }
 
-func (r *repository) CancelInvoice(ctx context.Context, invoiceID string) error {
-	// TODO: implement
-	return errors.New("not implemented")
-}
-
 func (r *repository) AddItem(ctx context.Context, item invoice.Item) error {
 	dbitem := NewItem(item)
 	putItem, err := dynamodbattribute.MarshalMap(dbitem)
@@ -228,17 +222,9 @@ func (r *repository) GetItem(ctx context.Context, invoiceID, itemID string) (*in
 		return nil, err
 	}
 
-	proj := expression.NamesList(expression.Name("sku"), expression.Name("name"), expression.Name("price"))
-	expr, err := expression.NewBuilder().WithProjection(proj).Build()
-	if err != nil {
-		return nil, err
-	}
-
 	input := &dynamodb.GetItemInput{
-		TableName:                r.table,
-		ExpressionAttributeNames: expr.Names(),
-		ProjectionExpression:     expr.Projection(),
-		Key:                      pk,
+		TableName: r.table,
+		Key:       pk,
 	}
 
 	result, err := r.client.GetItemWithContext(ctx, input)
@@ -263,9 +249,9 @@ func (r *repository) GetItemProduct(ctx context.Context, invoiceID, itemID strin
 
 	input := &dynamodb.GetItemInput{
 		TableName:                r.table,
+		Key:                      pk,
 		ExpressionAttributeNames: expr.Names(),
 		ProjectionExpression:     expr.Projection(),
-		Key:                      pk,
 	}
 
 	result, err := r.client.GetItemWithContext(ctx, input)
@@ -341,10 +327,38 @@ func (r *repository) GetInvoiceItemsByStatus(
 	return toInvoiceItems(result.Items)
 }
 
+func (r *repository) UpdateInvoiceItemStatus(
+	ctx context.Context, invoiceID, itemID string, status invoice.Status) error {
+
+	pk, err := itemPrimaryKey(invoiceID, itemID)
+	if err != nil {
+		return err
+	}
+
+	upd := expression.
+		Set(expression.Name("status"), expression.Value(status)).
+		Set(expression.Name("updatedAt"), expression.Value(time.Now()))
+	expr, err := expression.NewBuilder().WithUpdate(upd).Build()
+	if err != nil {
+		return err
+	}
+
+	input := &dynamodb.UpdateItemInput{
+		TableName:                 r.table,
+		Key:                       pk,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		UpdateExpression:          expr.Update(),
+	}
+
+	_, err = r.client.UpdateItemWithContext(ctx, input)
+	return err
+}
+
 func (r *repository) UpdateInvoiceItemsStatus(
 	ctx context.Context, invoiceID string, status invoice.Status) error {
 
-	items, err := r.GetInvoiceItemsByStatus(ctx, invoiceID, "NEW")
+	items, err := r.GetInvoiceItemsByStatus(ctx, invoiceID, invoice.New)
 	if err != nil {
 		return err
 	}
@@ -380,7 +394,7 @@ func (r *repository) UpdateInvoiceItemsStatus(
 func (r *repository) ReplaceItems(
 	ctx context.Context, invoiceID string, newItems []invoice.Item) error {
 
-	items, err := r.GetInvoiceItemsByStatus(ctx, invoiceID, "NEW")
+	items, err := r.GetInvoiceItemsByStatus(ctx, invoiceID, invoice.New)
 	if err != nil {
 		return err
 	}
@@ -388,7 +402,7 @@ func (r *repository) ReplaceItems(
 		return nil
 	}
 
-	upd := expression.Set(expression.Name("status"), expression.Value("CANCELLED"))
+	upd := expression.Set(expression.Name("status"), expression.Value(invoice.Cancelled))
 	expr, err := expression.NewBuilder().WithUpdate(upd).Build()
 	if err != nil {
 		return err

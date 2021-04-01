@@ -9,6 +9,12 @@ import (
 // Status ...
 type Status string
 
+const (
+	New       Status = "NEW"
+	Pending   Status = "PENDING"
+	Cancelled Status = "CANCELLED"
+)
+
 // Invoice ...
 type Invoice struct {
 	ID           string // unique identifier, uuid format
@@ -51,7 +57,8 @@ type Service interface {
 	GetItemsByStatus(context.Context, Status) ([]Item, error)
 	GetInvoiceItemsByStatus(context.Context, string, Status) ([]Item, error)
 	UpdateInvoiceItemsStatus(context.Context, string, Status) error
-	ReplaceItems(context.Context, string, []Item) error // cancells all invoice items and adds new items
+	ReplaceItems(context.Context, string, []Item) error                    // cancells all invoice items and adds new items
+	CancelInvoiceItem(ctx context.Context, invoiceID, itemID string) error // cancells invoice item
 }
 
 type service struct {
@@ -102,4 +109,8 @@ func (s *service) UpdateInvoiceItemsStatus(ctx context.Context, invoiceID string
 
 func (s *service) ReplaceItems(ctx context.Context, invoiceID string, newItems []Item) error {
 	return s.repo.ReplaceItems(ctx, invoiceID, newItems)
+}
+
+func (s *service) CancelInvoiceItem(ctx context.Context, invoiceID, itemID string) error {
+	return s.repo.UpdateInvoiceItemStatus(ctx, invoiceID, itemID, Cancelled)
 }
