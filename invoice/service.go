@@ -53,6 +53,7 @@ type Service interface {
 	CancelInvoice(context.Context, string) error          // cancels invoice and all its items
 	AddItem(context.Context, Item) error                  // adds invoice's item
 	GetItem(ctx context.Context, invoiceID, itemID string) (*Item, error)
+	DeleteItem(ctx context.Context, invoiceID, itemID string) error
 	GetItemProduct(ctx context.Context, invoiceID, itemID string) (*Product, error)
 	GetItemsByStatus(context.Context, Status) ([]Item, error)
 	GetInvoiceItemsByStatus(context.Context, string, Status) ([]Item, error)
@@ -89,6 +90,10 @@ func (s *service) AddItem(ctx context.Context, item Item) error {
 
 func (s *service) GetItem(ctx context.Context, invoiceID, itemID string) (*Item, error) {
 	return s.repo.GetItem(ctx, invoiceID, itemID)
+}
+
+func (s *service) DeleteItem(ctx context.Context, invoiceID, itemID string) error {
+	return s.repo.DeleteItem(ctx, invoiceID, itemID)
 }
 
 func (s *service) GetItemProduct(ctx context.Context, invoiceID, itemID string) (*Product, error) {

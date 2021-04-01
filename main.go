@@ -169,6 +169,16 @@ func main() {
 	// 	log.Println("item", item)
 	// 	log.Println(err)
 	// }
+
+	{
+		// 10. Delete item
+		log.Println("10. Delete item ==================================")
+		ctx := context.Background()
+		itemID := inv.Items[1].ID
+		err := service.DeleteItem(ctx, inv.ID, itemID)
+		log.Println("itemID", itemID)
+		log.Println(err)
+	}
 }
 
 func getInvoices() ([]invoice.Invoice, error) {
