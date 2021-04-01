@@ -356,33 +356,38 @@ func (r *repository) UpdateInvoiceItemStatus(
 }
 
 func (r *repository) UpdateInvoiceItemsStatus(
-	ctx context.Context, invoiceID string, status invoice.Status) error {
+	ctx context.Context, invoiceID string, itemIDs []string, status invoice.Status) error {
 
-	items, err := r.GetInvoiceItemsByStatus(ctx, invoiceID, invoice.New)
-	if err != nil {
-		return err
-	}
-	if len(items) == 0 {
+	if len(itemIDs) == 0 {
 		return nil
 	}
 
-	upd := expression.Set(expression.Name("status"), expression.Value(status))
+	upd := expression.
+		Set(expression.Name("status"), expression.Value(status)).
+		Set(expression.Name("updatedAt"), expression.Value(time.Now()))
 	expr, err := expression.NewBuilder().WithUpdate(upd).Build()
 	if err != nil {
 		return err
 	}
 
-	updates, err := invoiceItemsToUpdates(items, r.table, expr)
-	if err != nil {
-		return err
+	transactItems := make([]*dynamodb.TransactWriteItem, len(itemIDs))
+	for idx, itemID := range itemIDs {
+		pk, err := itemPrimaryKey(invoiceID, itemID)
+		if err != nil {
+			return err
+		}
+
+		update := &dynamodb.Update{
+			TableName:                 r.table,
+			Key:                       pk,
+			ExpressionAttributeNames:  expr.Names(),
+			ExpressionAttributeValues: expr.Values(),
+			UpdateExpression:          expr.Update(),
+		}
+		transactItems[idx] = &dynamodb.TransactWriteItem{Update: update}
 	}
 
-	updateItems := make([]*dynamodb.TransactWriteItem, len(updates))
-	for idx, update := range updates {
-		updateItems[idx] = &dynamodb.TransactWriteItem{Update: update}
-	}
-
-	transaction := &dynamodb.TransactWriteItemsInput{TransactItems: updateItems}
+	transaction := &dynamodb.TransactWriteItemsInput{TransactItems: transactItems}
 	if err := transaction.Validate(); err != nil {
 		return err
 	}
@@ -391,6 +396,7 @@ func (r *repository) UpdateInvoiceItemsStatus(
 	return err
 }
 
+// TODO: add a list of old items IDs to replace
 func (r *repository) ReplaceItems(
 	ctx context.Context, invoiceID string, newItems []invoice.Item) error {
 

@@ -104,7 +104,21 @@ func (s *service) GetInvoiceItemsByStatus(ctx context.Context, invoiceID string,
 }
 
 func (s *service) UpdateInvoiceItemsStatus(ctx context.Context, invoiceID string, status Status) error {
-	return s.repo.UpdateInvoiceItemsStatus(ctx, invoiceID, status)
+	items, err := s.repo.GetInvoiceItemsByStatus(ctx, invoiceID, New)
+	if err != nil {
+		return err
+	}
+
+	if len(items) == 0 {
+		return nil
+	}
+
+	itemIDs := make([]string, len(items))
+	for idx, item := range items {
+		itemIDs[idx] = item.ID
+	}
+
+	return s.repo.UpdateInvoiceItemsStatus(ctx, invoiceID, itemIDs, status)
 }
 
 func (s *service) ReplaceItems(ctx context.Context, invoiceID string, newItems []Item) error {

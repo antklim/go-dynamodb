@@ -94,38 +94,38 @@ func main() {
 		log.Println(err)
 	}
 
-	{
-		// 5. Replace all invoce's items in status NEW with the new set of items
-		log.Println("5. Replace all NEW items =========================")
-		ctx := context.Background()
-		now := time.Now()
-		newItems := []invoice.Item{
-			{
-				ID:        uuid.NewString(),
-				InvoiceID: inv.ID,
-				SKU:       "300",
-				Name:      "Drums set",
-				Price:     132000,
-				Qty:       1,
-				Status:    invoice.New,
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
-			{
-				ID:        uuid.NewString(),
-				InvoiceID: inv.ID,
-				SKU:       "301",
-				Name:      "Drum sticks",
-				Price:     4200,
-				Qty:       2,
-				Status:    invoice.New,
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
-		}
-		err := service.ReplaceItems(ctx, inv.ID, newItems)
-		log.Println(err)
-	}
+	// {
+	// 	// 5. Replace all invoce's items in status NEW with the new set of items
+	// 	log.Println("5. Replace all NEW items =========================")
+	// 	ctx := context.Background()
+	// 	now := time.Now()
+	// 	newItems := []invoice.Item{
+	// 		{
+	// 			ID:        uuid.NewString(),
+	// 			InvoiceID: inv.ID,
+	// 			SKU:       "300",
+	// 			Name:      "Drums set",
+	// 			Price:     132000,
+	// 			Qty:       1,
+	// 			Status:    invoice.New,
+	// 			CreatedAt: now,
+	// 			UpdatedAt: now,
+	// 		},
+	// 		{
+	// 			ID:        uuid.NewString(),
+	// 			InvoiceID: inv.ID,
+	// 			SKU:       "301",
+	// 			Name:      "Drum sticks",
+	// 			Price:     4200,
+	// 			Qty:       2,
+	// 			Status:    invoice.New,
+	// 			CreatedAt: now,
+	// 			UpdatedAt: now,
+	// 		},
+	// 	}
+	// 	err := service.ReplaceItems(ctx, inv.ID, newItems)
+	// 	log.Println(err)
+	// }
 
 	{
 		// 6. Get invoice
@@ -157,18 +157,18 @@ func main() {
 		log.Println(err)
 	}
 
-	{
-		// 9. Cancel invoice item
-		log.Println("9. Cancel invoice item ===========================")
-		ctx := context.Background()
-		itemID := inv.Items[0].ID
-		log.Println("itemID", itemID)
-		err := service.CancelInvoiceItem(ctx, inv.ID, itemID)
-		log.Println(err)
-		item, err := service.GetItem(ctx, inv.ID, itemID)
-		log.Println("item", item)
-		log.Println(err)
-	}
+	// {
+	// 	// 9. Cancel invoice item
+	// 	log.Println("9. Cancel invoice item ===========================")
+	// 	ctx := context.Background()
+	// 	itemID := inv.Items[0].ID
+	// 	log.Println("itemID", itemID)
+	// 	err := service.CancelInvoiceItem(ctx, inv.ID, itemID)
+	// 	log.Println(err)
+	// 	item, err := service.GetItem(ctx, inv.ID, itemID)
+	// 	log.Println("item", item)
+	// 	log.Println(err)
+	// }
 }
 
 func getInvoices() ([]invoice.Invoice, error) {
