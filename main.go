@@ -61,6 +61,7 @@ func main() {
 	inv := createInvoice()
 	{
 		// 1. Store invoice
+		log.Println("1. Store invoice =================================")
 		ctx := context.Background()
 		err := service.StoreInvoice(ctx, inv)
 		log.Println(inv)
@@ -69,6 +70,7 @@ func main() {
 
 	{
 		// 2. Get all new items
+		log.Println("2. Get all new items =============================")
 		ctx := context.Background()
 		items, err := service.GetItemsByStatus(ctx, "NEW")
 		log.Printf("%+v\n", items)
@@ -77,6 +79,7 @@ func main() {
 
 	{
 		// 3. Get NEW items of the invoice
+		log.Println("3. Get NEW items of the invoice ==================")
 		ctx := context.Background()
 		items, err := service.GetInvoiceItemsByStatus(ctx, inv.ID, "NEW")
 		log.Printf("%+v\n", items)
@@ -85,6 +88,7 @@ func main() {
 
 	{
 		// 4. Update all invoce's items status
+		log.Println("4. Update all invoce's items status ==============")
 		ctx := context.Background()
 		err := service.UpdateInvoiceItemsStatus(ctx, inv.ID, "CANCELLED")
 		log.Println(err)
@@ -92,6 +96,7 @@ func main() {
 
 	{
 		// 5. Replace all invoce's items in status NEW with the new set of items
+		log.Println("5. Replace all NEW items =========================")
 		ctx := context.Background()
 		now := time.Now()
 		newItems := []invoice.Item{
@@ -124,11 +129,30 @@ func main() {
 
 	{
 		// 6. Get invoice
+		log.Println("6. Get invoice ===================================")
 		ctx := context.Background()
 		inv, err := service.GetInvoice(ctx, inv.ID)
 		log.Println("invoiceID", inv.ID)
 		log.Println(err)
 		log.Println("invoice", inv)
+	}
+
+	{
+		// 7. Get item
+		log.Println("6. Get item ======================================")
+		ctx := context.Background()
+		item, err := service.GetItem(ctx, inv.ID, inv.Items[0].ID)
+		log.Println("item", item)
+		log.Println(err)
+	}
+
+	{
+		// 8. Get item product
+		log.Println("6. Get product ===================================")
+		ctx := context.Background()
+		product, err := service.GetItemProduct(ctx, inv.ID, inv.Items[0].ID)
+		log.Println("product", product)
+		log.Println(err)
 	}
 }
 

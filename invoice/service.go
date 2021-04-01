@@ -34,12 +34,20 @@ type Item struct {
 	UpdatedAt time.Time
 }
 
+// Product ...
+type Product struct {
+	SKU   string
+	Name  string
+	Price uint
+}
+
 type Service interface {
 	StoreInvoice(context.Context, Invoice) error
 	GetInvoice(context.Context, string) (*Invoice, error) // gets invoice and all its items
 	CancelInvoice(context.Context, string) error          // cancels invoice and all its items
 	AddItem(context.Context, Item) error                  // adds invoice's item
 	GetItem(ctx context.Context, invoiceID, itemID string) (*Item, error)
+	GetItemProduct(ctx context.Context, invoiceID, itemID string) (*Product, error)
 	GetItemsByStatus(context.Context, Status) ([]Item, error)
 	GetInvoiceItemsByStatus(context.Context, string, Status) ([]Item, error)
 	UpdateInvoiceItemsStatus(context.Context, string, Status) error
@@ -74,6 +82,10 @@ func (s *service) AddItem(ctx context.Context, item Item) error {
 
 func (s *service) GetItem(ctx context.Context, invoiceID, itemID string) (*Item, error) {
 	return s.repo.GetItem(ctx, invoiceID, itemID)
+}
+
+func (s *service) GetItemProduct(ctx context.Context, invoiceID, itemID string) (*Product, error) {
+	return s.repo.GetItemProduct(ctx, invoiceID, itemID)
 }
 
 func (s *service) GetItemsByStatus(ctx context.Context, status Status) ([]Item, error) {

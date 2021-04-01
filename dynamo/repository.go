@@ -87,13 +87,6 @@ type Item struct {
 	UpdatedAt time.Time `dynamodbav:"updatedAt"`
 }
 
-// Product describes product properties of Item
-type Product struct {
-	SKU   string `dynamodbav:"sku"`
-	Name  string `dynamodbav:"name"`
-	Price uint   `dynamodbav:"price"`
-}
-
 // NewItem creates an instance of DynamoDB item from invoice.Item.
 func NewItem(item invoice.Item) Item {
 	pk := itemPartitionKey(item.InvoiceID)
@@ -126,6 +119,21 @@ func (item *Item) ToItem() invoice.Item {
 		Status:    invoice.Status(item.Status),
 		CreatedAt: item.CreatedAt,
 		UpdatedAt: item.UpdatedAt,
+	}
+}
+
+// Product describes product properties of Item
+type Product struct {
+	SKU   string `dynamodbav:"sku"`
+	Name  string `dynamodbav:"name"`
+	Price uint   `dynamodbav:"price"`
+}
+
+func (p *Product) ToProduct() *invoice.Product {
+	return &invoice.Product{
+		SKU:   p.SKU,
+		Name:  p.Name,
+		Price: p.Price,
 	}
 }
 
@@ -227,9 +235,10 @@ func (r *repository) GetItem(ctx context.Context, invoiceID, itemID string) (*in
 	}
 
 	input := &dynamodb.GetItemInput{
-		TableName:            r.table,
-		ProjectionExpression: expr.Projection(),
-		Key:                  pk,
+		TableName:                r.table,
+		ExpressionAttributeNames: expr.Names(),
+		ProjectionExpression:     expr.Projection(),
+		Key:                      pk,
 	}
 
 	result, err := r.client.GetItemWithContext(ctx, input)
@@ -240,7 +249,7 @@ func (r *repository) GetItem(ctx context.Context, invoiceID, itemID string) (*in
 	return toItem(result.Item)
 }
 
-func (r *repository) GetItemProduct(ctx context.Context, invoiceID, itemID string) (*Product, error) {
+func (r *repository) GetItemProduct(ctx context.Context, invoiceID, itemID string) (*invoice.Product, error) {
 	pk, err := itemPrimaryKey(invoiceID, itemID)
 	if err != nil {
 		return nil, err
@@ -253,9 +262,10 @@ func (r *repository) GetItemProduct(ctx context.Context, invoiceID, itemID strin
 	}
 
 	input := &dynamodb.GetItemInput{
-		TableName:            r.table,
-		ProjectionExpression: expr.Projection(),
-		Key:                  pk,
+		TableName:                r.table,
+		ExpressionAttributeNames: expr.Names(),
+		ProjectionExpression:     expr.Projection(),
+		Key:                      pk,
 	}
 
 	result, err := r.client.GetItemWithContext(ctx, input)
@@ -268,7 +278,7 @@ func (r *repository) GetItemProduct(ctx context.Context, invoiceID, itemID strin
 		return nil, err
 	}
 
-	return &product, nil
+	return product.ToProduct(), nil
 }
 
 func (r *repository) GetItemsByStatus(ctx context.Context, status invoice.Status) ([]invoice.Item, error) {
