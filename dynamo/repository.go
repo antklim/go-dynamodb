@@ -292,6 +292,37 @@ func (r *repository) GetItemsByStatus(ctx context.Context, status invoice.Status
 	return toInvoiceItems(result.Items)
 }
 
+func (r *repository) GetInvoiceItems(
+	ctx context.Context, invoiceID string) ([]invoice.Item, error) {
+
+	pk := itemPartitionKey(invoiceID)
+	keyCond := expression.KeyAnd(
+		expression.Key("pk").Equal(expression.Value(pk)),
+		expression.Key("sk").BeginsWith(itemSkPrefix+keySeparator),
+	)
+
+	expr, err := expression.NewBuilder().
+		WithKeyCondition(keyCond).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+
+	input := &dynamodb.QueryInput{
+		TableName:                 r.table,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		KeyConditionExpression:    expr.KeyCondition(),
+	}
+
+	result, err := r.client.QueryWithContext(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return toInvoiceItems(result.Items)
+}
+
 func (r *repository) GetInvoiceItemsByStatus(
 	ctx context.Context, invoiceID string, status invoice.Status) ([]invoice.Item, error) {
 

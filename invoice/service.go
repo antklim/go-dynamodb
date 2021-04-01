@@ -104,7 +104,7 @@ func (s *service) GetInvoiceItemsByStatus(ctx context.Context, invoiceID string,
 }
 
 func (s *service) UpdateInvoiceItemsStatus(ctx context.Context, invoiceID string, status Status) error {
-	items, err := s.repo.GetInvoiceItemsByStatus(ctx, invoiceID, New)
+	items, err := s.repo.GetInvoiceItems(ctx, invoiceID)
 	if err != nil {
 		return err
 	}
