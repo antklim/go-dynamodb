@@ -136,17 +136,17 @@ func (p *Product) ToProduct() *invoice.Product {
 	}
 }
 
-type repository struct {
+type Repository struct {
 	client dynamodbiface.DynamoDBAPI
 	table  *string
 }
 
 // NewRepository ...
-func NewRepository(client dynamodbiface.DynamoDBAPI, table string) invoice.Repository {
-	return &repository{client: client, table: aws.String(table)}
+func NewRepository(client dynamodbiface.DynamoDBAPI, table string) *Repository {
+	return &Repository{client: client, table: aws.String(table)}
 }
 
-func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error {
+func (r *Repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error {
 	dbinv := NewInvoice(inv)
 	putInvoiceItem, err := dynamodbattribute.MarshalMap(dbinv)
 	if err != nil {
@@ -181,7 +181,7 @@ func (r *repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 	return err
 }
 
-func (r *repository) GetInvoice(ctx context.Context, invoiceID string) (*invoice.Invoice, error) {
+func (r *Repository) GetInvoice(ctx context.Context, invoiceID string) (*invoice.Invoice, error) {
 	pk, err := invoicePrimaryKey(invoiceID)
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (r *repository) GetInvoice(ctx context.Context, invoiceID string) (*invoice
 	return toInvoice(result.Item)
 }
 
-func (r *repository) AddItem(ctx context.Context, item invoice.Item) error {
+func (r *Repository) AddItem(ctx context.Context, item invoice.Item) error {
 	dbitem := NewItem(item)
 	putItem, err := dynamodbattribute.MarshalMap(dbitem)
 	if err != nil {
@@ -216,7 +216,7 @@ func (r *repository) AddItem(ctx context.Context, item invoice.Item) error {
 	return err
 }
 
-func (r *repository) GetItem(ctx context.Context, invoiceID, itemID string) (*invoice.Item, error) {
+func (r *Repository) GetItem(ctx context.Context, invoiceID, itemID string) (*invoice.Item, error) {
 	pk, err := itemPrimaryKey(invoiceID, itemID)
 	if err != nil {
 		return nil, err
@@ -235,7 +235,7 @@ func (r *repository) GetItem(ctx context.Context, invoiceID, itemID string) (*in
 	return toItem(result.Item)
 }
 
-func (r *repository) GetItemProduct(ctx context.Context, invoiceID, itemID string) (*invoice.Product, error) {
+func (r *Repository) GetItemProduct(ctx context.Context, invoiceID, itemID string) (*invoice.Product, error) {
 	pk, err := itemPrimaryKey(invoiceID, itemID)
 	if err != nil {
 		return nil, err
@@ -267,7 +267,7 @@ func (r *repository) GetItemProduct(ctx context.Context, invoiceID, itemID strin
 	return product.ToProduct(), nil
 }
 
-func (r *repository) DeleteItem(ctx context.Context, invoiceID, itemID string) error {
+func (r *Repository) DeleteItem(ctx context.Context, invoiceID, itemID string) error {
 	pk, err := itemPrimaryKey(invoiceID, itemID)
 	if err != nil {
 		return err
@@ -282,7 +282,7 @@ func (r *repository) DeleteItem(ctx context.Context, invoiceID, itemID string) e
 	return err
 }
 
-func (r *repository) GetItemsByStatus(ctx context.Context, status invoice.Status) ([]invoice.Item, error) {
+func (r *Repository) GetItemsByStatus(ctx context.Context, status invoice.Status) ([]invoice.Item, error) {
 	filt := expression.And(
 		expression.Name("sk").BeginsWith(itemSkPrefix+keySeparator),
 		expression.Name("status").Equal(expression.Value(status)),
@@ -307,7 +307,7 @@ func (r *repository) GetItemsByStatus(ctx context.Context, status invoice.Status
 	return toInvoiceItems(result.Items)
 }
 
-func (r *repository) GetInvoiceItems(
+func (r *Repository) GetInvoiceItems(
 	ctx context.Context, invoiceID string) ([]invoice.Item, error) {
 
 	pk := itemPartitionKey(invoiceID)
@@ -338,7 +338,7 @@ func (r *repository) GetInvoiceItems(
 	return toInvoiceItems(result.Items)
 }
 
-func (r *repository) GetInvoiceItemsByStatus(
+func (r *Repository) GetInvoiceItemsByStatus(
 	ctx context.Context, invoiceID string, status invoice.Status) ([]invoice.Item, error) {
 
 	pk := itemPartitionKey(invoiceID)
@@ -373,7 +373,7 @@ func (r *repository) GetInvoiceItemsByStatus(
 	return toInvoiceItems(result.Items)
 }
 
-func (r *repository) UpdateInvoiceItemStatus(
+func (r *Repository) UpdateInvoiceItemStatus(
 	ctx context.Context, invoiceID, itemID string, status invoice.Status) error {
 
 	pk, err := itemPrimaryKey(invoiceID, itemID)
@@ -401,7 +401,7 @@ func (r *repository) UpdateInvoiceItemStatus(
 	return err
 }
 
-func (r *repository) UpdateInvoiceItemsStatus(
+func (r *Repository) UpdateInvoiceItemsStatus(
 	ctx context.Context, invoiceID string, itemIDs []string, status invoice.Status) error {
 
 	if len(itemIDs) == 0 {
@@ -443,7 +443,7 @@ func (r *repository) UpdateInvoiceItemsStatus(
 }
 
 // TODO: add a list of old items IDs to replace
-func (r *repository) ReplaceItems(
+func (r *Repository) ReplaceItems(
 	ctx context.Context, invoiceID string, newItems []invoice.Item) error {
 
 	items, err := r.GetInvoiceItemsByStatus(ctx, invoiceID, invoice.New)
