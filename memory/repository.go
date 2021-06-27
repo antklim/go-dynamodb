@@ -25,7 +25,7 @@ func (i *invoices) create(inv invoice.Invoice) error {
 	return nil
 }
 
-func (i *invoices) read(invoiceID string) (*invoice.Invoice, error) {
+func (i *invoices) get(invoiceID string) (*invoice.Invoice, error) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -52,7 +52,7 @@ func (i *items) create(item invoice.Item) error {
 	return nil
 }
 
-func (i *items) read(itemID string) (*invoice.Item, error) {
+func (i *items) get(itemID string) (*invoice.Item, error) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -87,7 +87,7 @@ func (r *Repository) AddInvoice(ctx context.Context, inv invoice.Invoice) error 
 }
 
 func (r *Repository) GetInvoice(ctx context.Context, invoiceID string) (*invoice.Invoice, error) {
-	return r.invs.read(invoiceID)
+	return r.invs.get(invoiceID)
 }
 
 func (r *Repository) AddItem(ctx context.Context, item invoice.Item) error {
@@ -95,11 +95,11 @@ func (r *Repository) AddItem(ctx context.Context, item invoice.Item) error {
 }
 
 func (r *Repository) GetItem(ctx context.Context, invoiceID, itemID string) (*invoice.Item, error) {
-	return r.itms.read(itemID)
+	return r.itms.get(itemID)
 }
 
 func (r *Repository) GetItemProduct(ctx context.Context, invoiceID, itemID string) (*invoice.Product, error) {
-	item, err := r.itms.read(itemID)
+	item, err := r.itms.get(itemID)
 	if item == nil || err != nil {
 		return nil, err
 	}
@@ -118,6 +118,7 @@ func (r *Repository) DeleteItem(ctx context.Context, invoiceID, itemID string) e
 }
 
 func (r *Repository) GetItemsByStatus(ctx context.Context, status invoice.Status) ([]invoice.Item, error) {
+
 	return nil, errNotImplemented
 }
 
