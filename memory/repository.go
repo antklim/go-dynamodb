@@ -35,6 +35,8 @@ func (i *invoices) get(invoiceID string) (*invoice.Invoice, error) {
 	return nil, nil
 }
 
+type itemScanner func(invoice.Item, []invoice.Item)
+
 type items struct {
 	mu    sync.Mutex
 	table map[string]invoice.Item
@@ -62,12 +64,53 @@ func (i *items) get(itemID string) (*invoice.Item, error) {
 	return nil, nil
 }
 
+func (i *items) scan(s itemScanner) ([]invoice.Item, error) {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+
+	var acc []invoice.Item
+
+	for _, v := range i.table {
+		s(v, acc)
+	}
+
+	if len(acc) == 0 {
+		return nil, nil
+	}
+
+	return acc, nil
+}
+
 func (i *items) del(itemID string) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
 	delete(i.table, itemID)
 	return nil
+}
+
+func itemsByStatus(status invoice.Status) itemScanner {
+	return func(item invoice.Item, acc []invoice.Item) {
+		if item.Status == status {
+			acc = append(acc, item)
+		}
+	}
+}
+
+func invoiceItems(invoiceID string) itemScanner {
+	return func(item invoice.Item, acc []invoice.Item) {
+		if item.InvoiceID == invoiceID {
+			acc = append(acc, item)
+		}
+	}
+}
+
+func invoiceItemsByStatus(invoiceID string, status invoice.Status) itemScanner {
+	return func(item invoice.Item, acc []invoice.Item) {
+		if item.InvoiceID == invoiceID && item.Status == status {
+			acc = append(acc, item)
+		}
+	}
 }
 
 type Repository struct {
@@ -118,18 +161,17 @@ func (r *Repository) DeleteItem(ctx context.Context, invoiceID, itemID string) e
 }
 
 func (r *Repository) GetItemsByStatus(ctx context.Context, status invoice.Status) ([]invoice.Item, error) {
-
-	return nil, errNotImplemented
+	return r.itms.scan(itemsByStatus(status))
 }
 
 func (r *Repository) GetInvoiceItems(ctx context.Context, invoiceID string) ([]invoice.Item, error) {
-	return nil, errNotImplemented
+	return r.itms.scan(invoiceItems(invoiceID))
 }
 
 func (r *Repository) GetInvoiceItemsByStatus(
 	ctx context.Context, invoiceID string, status invoice.Status) ([]invoice.Item, error) {
 
-	return nil, errNotImplemented
+	return r.itms.scan(invoiceItemsByStatus(invoiceID, status))
 }
 
 func (r *Repository) UpdateInvoiceItemStatus(
