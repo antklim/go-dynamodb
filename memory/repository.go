@@ -35,7 +35,7 @@ func (i *invoices) get(invoiceID string) (*invoice.Invoice, error) {
 	return nil, nil
 }
 
-type itemScanner func(invoice.Item, []invoice.Item)
+type itemFilter func(invoice.Item) bool
 
 type items struct {
 	mu    sync.Mutex
@@ -64,14 +64,16 @@ func (i *items) get(itemID string) (*invoice.Item, error) {
 	return nil, nil
 }
 
-func (i *items) scan(s itemScanner) ([]invoice.Item, error) {
+func (i *items) scan(s itemFilter) ([]invoice.Item, error) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
 	var acc []invoice.Item
 
 	for _, v := range i.table {
-		s(v, acc)
+		if s(v) {
+			acc = append(acc, v)
+		}
 	}
 
 	if len(acc) == 0 {
@@ -89,27 +91,21 @@ func (i *items) del(itemID string) error {
 	return nil
 }
 
-func itemsByStatus(status invoice.Status) itemScanner {
-	return func(item invoice.Item, acc []invoice.Item) {
-		if item.Status == status {
-			acc = append(acc, item)
-		}
+func itemsByStatus(status invoice.Status) itemFilter {
+	return func(item invoice.Item) bool {
+		return item.Status == status
 	}
 }
 
-func invoiceItems(invoiceID string) itemScanner {
-	return func(item invoice.Item, acc []invoice.Item) {
-		if item.InvoiceID == invoiceID {
-			acc = append(acc, item)
-		}
+func invoiceItems(invoiceID string) itemFilter {
+	return func(item invoice.Item) bool {
+		return item.InvoiceID == invoiceID
 	}
 }
 
-func invoiceItemsByStatus(invoiceID string, status invoice.Status) itemScanner {
-	return func(item invoice.Item, acc []invoice.Item) {
-		if item.InvoiceID == invoiceID && item.Status == status {
-			acc = append(acc, item)
-		}
+func invoiceItemsByStatus(invoiceID string, status invoice.Status) itemFilter {
+	return func(item invoice.Item) bool {
+		return item.InvoiceID == invoiceID && item.Status == status
 	}
 }
 
