@@ -9,7 +9,7 @@ import (
 )
 
 type invoices struct {
-	mu    sync.Mutex
+	mu    sync.RWMutex
 	table map[string]invoice.Invoice
 }
 
@@ -26,8 +26,8 @@ func (i *invoices) create(inv invoice.Invoice) error {
 }
 
 func (i *invoices) get(invoiceID string) (*invoice.Invoice, error) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
+	i.mu.RLock()
+	defer i.mu.RUnlock()
 
 	if inv, ok := i.table[invoiceID]; ok {
 		return &inv, nil
@@ -38,7 +38,7 @@ func (i *invoices) get(invoiceID string) (*invoice.Invoice, error) {
 type itemFilter func(invoice.Item) bool
 
 type items struct {
-	mu    sync.Mutex
+	mu    sync.RWMutex
 	table map[string]invoice.Item
 }
 
@@ -55,8 +55,8 @@ func (i *items) create(item invoice.Item) error {
 }
 
 func (i *items) get(itemID string) (*invoice.Item, error) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
+	i.mu.RLock()
+	defer i.mu.RUnlock()
 
 	if item, ok := i.table[itemID]; ok {
 		return &item, nil
@@ -65,8 +65,8 @@ func (i *items) get(itemID string) (*invoice.Item, error) {
 }
 
 func (i *items) scan(s itemFilter) ([]invoice.Item, error) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
+	i.mu.RLock()
+	defer i.mu.RUnlock()
 
 	var acc []invoice.Item
 
