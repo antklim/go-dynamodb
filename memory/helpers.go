@@ -2,6 +2,7 @@ package memory
 
 import (
 	"errors"
+	"io"
 
 	"github.com/antklim/go-dynamodb/invoice"
 )
@@ -31,4 +32,15 @@ func (r *itemsReader) Read(b []invoice.Item) (n int, err error) {
 
 func newInvoiceReader(t map[string]invoice.Item) *itemsReader {
 	return &itemsReader{t, 0}
+}
+
+// TODO: implement filtering using itemsFilter
+type itemsFilter struct {
+	r io.Reader
+	f itemFilter
+	b []invoice.Item
+}
+
+func newItemsFilter(r io.Reader, f itemFilter) *itemFilter {
+	return nil
 }
