@@ -34,7 +34,27 @@ func initRepo() invoice.Repository {
 }
 
 func TestService(t *testing.T) {
+	t.Run("given an inovice does not exist", func(t *testing.T) {
+		t.Run("when call GetInvoice then expect nothing to be returned", func(t *testing.T) {})
+		t.Run("when call CancelInvoice then expect nothing to be returned", func(t *testing.T) {})
+		t.Run("when call AddItem then expect error to be returned", func(t *testing.T) {})
+		t.Run("when GetItem then expect nothing to be returned", func(t *testing.T) {})
+	})
 
+	t.Run("given an existing active invoice", func(t *testing.T) {
+		t.Run("when call GetInvoice then expect invoice to be returned", func(t *testing.T) {})
+		t.Run("when call AddItem then item to be added to invoice", func(t *testing.T) {})
+		// TODO: GetItem will be called in the previous test
+		// t.Run("when GetItem then expect nothing returned", func(t *testing.T) {})
+		t.Run("when call CancelInvoice then expect invoice to be cancelled", func(t *testing.T) {})
+	})
+
+	t.Run("given a cancelled invoice", func(t *testing.T) {
+		t.Run("when call GetInvoice then expect invoice to be returned", func(t *testing.T) {})
+		t.Run("when call AddItem then expect error to be returned", func(t *testing.T) {})
+		t.Run("when GetItem then expect invoice item to be returned", func(t *testing.T) {})
+		t.Run("when call CancelInvoice then expect error to be returned", func(t *testing.T) {})
+	})
 }
 
 func TestServicePropagatesStorageErrors(t *testing.T) {
